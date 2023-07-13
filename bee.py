@@ -13,6 +13,13 @@ class BeeWorld(gym.Env):
         self._agent_theta = 0.0  # Agent's direction as angle from x-axis
         self._agent_ang_vel = 0.0  # Angular velocity
 
+        self.walls = [
+            (0, 0),
+            (self.size, 0),
+            (0, self.size),
+            (self.size, self.size),
+        ]
+
         self.observation_space = spaces.Dict(
             {
                 "vision": spaces.Discrete(2),
@@ -88,8 +95,7 @@ class BeeWorld(gym.Env):
         """
         returns (observation, reward, done, info)
         """
-        # if not self.action_space.contains(action):
-        # raise ValueError(f'Invalid action {action} ({type(action)})')
+        old_agent_location = self._agent_location.copy()
 
         self._agent_location += [
             self.dt * self._agent_vel * np.sin(self._agent_theta),
@@ -98,7 +104,11 @@ class BeeWorld(gym.Env):
         self._agent_vel += self.dt * action[0]
         self._agent_theta += self.dt * action[1]
 
-        terminated = np.array_equal(self._agent_location, self._target_location)
+        # If bee would have crossed the wall make it stuck in old location
+        if any(self._agent_location) <= 0 or any(self._agent_location) >= self.size:
+            self._agent_location = old_agent_location
+
+        terminated = all(self._agent_location == self._target_location)
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
@@ -111,7 +121,7 @@ class BeeWorld(gym.Env):
                 quit()
 
         self.render()
-        self.clock.tick(60)
+        self.clock.tick(10)
 
         return observation, reward, terminated, False, info
 
@@ -131,7 +141,7 @@ class BeeWorld(gym.Env):
             trajectory_points = [
                 pos * (self.screen_size[0] / self.size) for pos in self.trajectory
             ]
-            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 2)
+            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 4)
 
         pygame.display.flip()
 
