@@ -98,7 +98,6 @@ class BeeWorld(gym.Env):
         self._agent_vel += self.dt * action[0]
         self._agent_theta += self.dt * action[1]
 
-        print(self._agent_location)
         terminated = np.array_equal(self._agent_location, self._target_location)
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
