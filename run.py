@@ -9,7 +9,7 @@ gym.register(
     max_episode_steps=3000,
 )
 
-env = gym.make("BeeWorld")
+env = gym.make("BeeWorld", render_mode="human")
 env.reset()
 
 done = False
