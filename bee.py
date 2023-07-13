@@ -1,8 +1,8 @@
 import numpy as np
+import pygame
+from pygame.locals import *
 import gymnasium as gym
 from gymnasium import spaces
-
-import matplotlib.pyplot as plt
 
 
 class BeeWorld(gym.Env):
@@ -24,6 +24,15 @@ class BeeWorld(gym.Env):
         self.action_space = spaces.Tuple(
             (spaces.Box(-1, 1, dtype=float), spaces.Box(-1, 1, dtype=float))
         )
+
+        pygame.init()
+        self.screen_size = (400, 400)
+        self.screen = pygame.display.set_mode(self.screen_size)
+        pygame.display.set_caption("BeeWorld")
+
+        self.clock = pygame.time.Clock()
+
+        self.trajectory = []
 
     def _check_vision(self):
         """
@@ -71,12 +80,19 @@ class BeeWorld(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
+        self.trajectory = []  # Reset trajectory
+
         return observation, info
 
     def step(self, action):
         """
         returns (observation, reward, done, info)
         """
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                quit()
+
         self._agent_location += [
             self.dt * self._agent_vel * np.sin(self._agent_theta),
             self.dt * self._agent_vel * np.cos(self._agent_theta),
@@ -84,37 +100,42 @@ class BeeWorld(gym.Env):
         self._agent_vel += self.dt * action[0]
         self._agent_theta += self.dt * action[1]
 
+        print(self._agent_location)
         terminated = np.array_equal(self._agent_location, self._target_location)
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
 
-        # TODO: Rendering needs to happen via pygame in render()
-        # THIS IS TEMPORARY
-        fig, ax = plt.subplots()
+        self.trajectory.append(self._agent_location.copy())
 
-        ax.scatter(self._agent_location[0], self._agent_location[1], label="agent")
-        ax.scatter(self._target_location[0], self._target_location[1], label="target")
+        self.render()  # Render the current state
 
-        ax.set_xlim(0, self.size)
-        ax.set_ylim(0, self.size)
-
-        plt.legend()
-        plt.show()
+        self.clock.tick(60)  # Limit the frame rate to 60 FPS
 
         return observation, reward, terminated, False, info
 
+    def render(self):
+        """
+        Renders the current state of the environment using Pygame
+        """
+        self.screen.fill((255, 255, 255))
 
-gym.register(
-    id="BeeWorld",
-    entry_point=BeeWorld,
-    max_episode_steps=300,
-)
+        agent_pos = self._agent_location * (self.screen_size[0] / self.size)
+        target_pos = self._target_location * (self.screen_size[0] / self.size)
 
-env = gym.make("BeeWorld")
-env.reset()
+        pygame.draw.circle(self.screen, (255, 0, 0), agent_pos.astype(int), 5)
+        pygame.draw.circle(self.screen, (0, 255, 0), target_pos.astype(int), 5)
 
-env.step((0.0, 0.0))
-env.step((1.0, 0.0))
-env.step((0.0, 0.0))
-env.step((0.0, 0.0))
+        if len(self.trajectory) > 1:
+            trajectory_points = [
+                pos * (self.screen_size[0] / self.size) for pos in self.trajectory
+            ]
+            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 2)
+
+        pygame.display.flip()
+
+    def close(self):
+        """
+        Clean up the environment
+        """
+        pygame.quit()
