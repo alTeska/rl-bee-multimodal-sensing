@@ -1,7 +1,7 @@
 import numpy as np
 import pygame
-from pygame.locals import *
 import gymnasium as gym
+from pygame.locals import *
 from gymnasium import spaces
 
 
@@ -88,10 +88,8 @@ class BeeWorld(gym.Env):
         """
         returns (observation, reward, done, info)
         """
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                quit()
+        # if not self.action_space.contains(action):
+        # raise ValueError(f'Invalid action {action} ({type(action)})')
 
         self._agent_location += [
             self.dt * self._agent_vel * np.sin(self._agent_theta),
@@ -108,9 +106,13 @@ class BeeWorld(gym.Env):
 
         self.trajectory.append(self._agent_location.copy())
 
-        self.render()  # Render the current state
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                quit()
 
-        self.clock.tick(60)  # Limit the frame rate to 60 FPS
+        self.render()
+        self.clock.tick(60)
 
         return observation, reward, terminated, False, info
 

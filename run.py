@@ -15,7 +15,7 @@ env.reset()
 done = False
 
 
-env.step((0.0, 0.0))
+# env.step((0.0, 0.0))
 while not done:
     A = np.random.uniform(-2, 2)
     theta = np.random.uniform(-2, 2)
