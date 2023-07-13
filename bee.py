@@ -172,7 +172,6 @@ class BeeWorld(gym.Env):
         if self.render_mode == "human":
             assert self.screen is not None
             self.screen.blit(self.surf, (0, 0))
-            pygame.event.pump()
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
         elif self.render_mode == "rgb_array":
