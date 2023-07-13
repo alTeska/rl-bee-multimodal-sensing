@@ -125,11 +125,12 @@ class BeeWorld(gym.Env):
 
         return observation, reward, terminated, False, info
 
-    def render(sel, scale=0.9):
+    def render(self, scale=0.9):
         """
         Renders the current state of the environment using Pygame.
         The screen is scaled Calculate the 90% screen size, the positions are also transformed based on the scale factor.
         """
+
         self.screen.fill((255, 255, 255))
 
         screen_width = int(self.screen_size[0] * scale)
