@@ -17,8 +17,8 @@ done = False
 
 # env.step((0.0, 0.0))
 while not done:
-    A = np.random.uniform(-1, 1)
-    theta = np.random.uniform(-1, 1)
+    A = np.random.uniform(-0.5, 0.5)
+    theta = np.random.uniform(-0.5, 0.5)
     env.step((A, theta))
 
 env.close()

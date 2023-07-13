@@ -93,7 +93,7 @@ class BeeWorld(gym.Env):
 
     def step(self, action):
         """
-        returns (observation, reward, done, info)
+        Returns (observation, reward, done, info)
         """
         old_agent_location = self._agent_location.copy()
 
@@ -104,8 +104,8 @@ class BeeWorld(gym.Env):
         self._agent_vel += self.dt * action[0]
         self._agent_theta += self.dt * action[1]
 
-        # If bee would have crossed the wall make it stuck in old location
-        if any(self._agent_location) <= 0 or any(self._agent_location) >= self.size:
+        # Check if the agent is outside the valid range
+        if any(self._agent_location < 0) or any(self._agent_location > self.size):
             self._agent_location = old_agent_location
 
         terminated = all(self._agent_location == self._target_location)
@@ -121,27 +121,38 @@ class BeeWorld(gym.Env):
                 quit()
 
         self.render()
-        self.clock.tick(10)
+        self.clock.tick(5)
 
         return observation, reward, terminated, False, info
 
-    def render(self):
+    def render(sel, scale=0.9):
         """
-        Renders the current state of the environment using Pygame
+        Renders the current state of the environment using Pygame.
+        The screen is scaled Calculate the 90% screen size, the positions are also transformed based on the scale factor.
         """
         self.screen.fill((255, 255, 255))
 
-        agent_pos = self._agent_location * (self.screen_size[0] / self.size)
-        target_pos = self._target_location * (self.screen_size[0] / self.size)
+        screen_width = int(self.screen_size[0] * scale)
+        screen_height = int(self.screen_size[1] * scale)
+        screen_offset_x = int((self.screen_size[0] - screen_width) / 2)
+        screen_offset_y = int((self.screen_size[1] - screen_height) / 2)
+
+        scale_factor = screen_width / self.size
+
+        agent_pos = self._agent_location * scale_factor
+        agent_pos += np.array([screen_offset_x, screen_offset_y])
+        target_pos = self._target_location * scale_factor
+        target_pos += np.array([screen_offset_x, screen_offset_y])
 
         pygame.draw.circle(self.screen, (255, 0, 0), agent_pos.astype(int), 5)
         pygame.draw.circle(self.screen, (0, 255, 0), target_pos.astype(int), 5)
 
         if len(self.trajectory) > 1:
             trajectory_points = [
-                pos * (self.screen_size[0] / self.size) for pos in self.trajectory
+                pos * scale_factor + np.array([screen_offset_x, screen_offset_y])
+                for pos in self.trajectory
             ]
-            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 4)
+            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 2)
 
         pygame.display.flip()
 
