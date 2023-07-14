@@ -11,13 +11,18 @@ class BeeWorld(gym.Env):
         "render_fps": 60,
     }
 
-    def __init__(self, size=10, dt=1, render_mode="human"):
+    def __init__(self, size=10, dt=0.1, render_mode="human"):
         self.render_mode = render_mode
         self.size = size  # Room size
         self.dt = dt  # Integration timestep
         self._agent_vel = 0.0  # Translational velocity
         self._agent_theta = 0.0  # Agent's direction as angle from x-axis
         self._agent_ang_vel = 0.0  # Angular velocity
+
+        self.linear_acceleration_range = 0.5
+        self.angular_acceleration_range = 0.1
+
+        self.cone_phi = np.pi / 8  # Vision cone angle
 
         self.walls = [
             (0, 0),
@@ -49,6 +54,14 @@ class BeeWorld(gym.Env):
         Returns 1 if the bee can see the goal and 0 otherwise
         TODO: implement
         """
+        ray = self._target_location - self._agent_location  # raycast from agent to goal
+        ang = (np.arctan2(ray[0], ray[1])) % (2 * np.pi)  # angle of raycast
+
+        diff = np.abs(ang - self._agent_theta)
+
+        if (diff < self.cone_phi) or ((2 * np.pi - diff) < self.cone_phi):
+            return 1
+
         return 0
 
     def _get_smell(self):
@@ -104,11 +117,14 @@ class BeeWorld(gym.Env):
         old_agent_location = self._agent_location.copy()
 
         self._agent_location += [
-            self.dt * self._agent_vel * np.sin(self._agent_theta),
             self.dt * self._agent_vel * np.cos(self._agent_theta),
+            self.dt * self._agent_vel * np.sin(self._agent_theta),
         ]
-        self._agent_vel += self.dt * action[0]
-        self._agent_theta += self.dt * action[1]
+        self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
+        self._agent_theta += self.dt * self._agent_ang_vel
+        self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
+
+        self._agent_theta = self._agent_theta % (2 * np.pi)
 
         # Check if the agent is outside the valid range
         if any(self._agent_location < 0) or any(self._agent_location > self.size):
@@ -168,6 +184,25 @@ class BeeWorld(gym.Env):
                 for pos in self.trajectory
             ]
             pygame.draw.lines(self.surf, (0, 0, 255), False, trajectory_points, 2)
+
+        pointl = (
+            self._agent_location
+            + [
+                2 * np.cos(self._agent_theta + self.cone_phi),
+                2 * np.sin(self._agent_theta + self.cone_phi),
+            ]
+        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
+
+        pointr = (
+            self._agent_location
+            + [
+                2 * np.cos(self._agent_theta - self.cone_phi),
+                2 * np.sin(self._agent_theta - self.cone_phi),
+            ]
+        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
+
+        pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointl], 2)
+        pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointr], 2)
 
         if self.render_mode == "human":
             assert self.screen is not None
