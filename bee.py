@@ -6,7 +6,13 @@ from gymnasium import spaces
 
 
 class BeeWorld(gym.Env):
-    def __init__(self, size=10, dt=1):
+    metadata = {
+        "render_modes": ["human", "rgb_array"],
+        "render_fps": 60,
+    }
+
+    def __init__(self, size=10, dt=1, render_mode="human"):
+        self.render_mode = render_mode
         self.size = size  # Room size
         self.dt = dt  # Integration timestep
         self._agent_vel = 0.0  # Translational velocity
@@ -32,12 +38,9 @@ class BeeWorld(gym.Env):
             (spaces.Box(-1, 1, dtype=float), spaces.Box(-1, 1, dtype=float))
         )
 
-        pygame.init()
+        self.screen: pygame.Surface = None
+        self.clock = None
         self.screen_size = (400, 400)
-        self.screen = pygame.display.set_mode(self.screen_size)
-        pygame.display.set_caption("BeeWorld")
-
-        self.clock = pygame.time.Clock()
 
         self.trajectory = []
 
@@ -89,6 +92,9 @@ class BeeWorld(gym.Env):
 
         self.trajectory = []  # Reset trajectory
 
+        if self.render_mode == "human":
+            self.render()
+
         return observation, info
 
     def step(self, action):
@@ -115,13 +121,13 @@ class BeeWorld(gym.Env):
 
         self.trajectory.append(self._agent_location.copy())
 
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                quit()
+        if self.render_mode == "human":
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    quit()
 
-        self.render()
-        self.clock.tick(5)
+            self.render()
 
         return observation, reward, terminated, False, info
 
@@ -130,8 +136,16 @@ class BeeWorld(gym.Env):
         Renders the current state of the environment using Pygame.
         The screen is scaled Calculate the 90% screen size, the positions are also transformed based on the scale factor.
         """
+        if self.screen is None and self.render_mode == "human":
+            pygame.init()
+            self.screen = pygame.display.set_mode(self.screen_size)
+            pygame.display.set_caption("BeeWorld")
 
-        self.screen.fill((255, 255, 255))
+        self.clock = pygame.time.Clock()
+
+        self.surf = pygame.Surface(self.screen_size)
+
+        self.surf.fill((255, 255, 255))
 
         screen_width = int(self.screen_size[0] * scale)
         screen_height = int(self.screen_size[1] * scale)
@@ -145,20 +159,30 @@ class BeeWorld(gym.Env):
         target_pos = self._target_location * scale_factor
         target_pos += np.array([screen_offset_x, screen_offset_y])
 
-        pygame.draw.circle(self.screen, (255, 0, 0), agent_pos.astype(int), 5)
-        pygame.draw.circle(self.screen, (0, 255, 0), target_pos.astype(int), 5)
+        pygame.draw.circle(self.surf, (255, 0, 0), agent_pos.astype(int), 5)
+        pygame.draw.circle(self.surf, (0, 255, 0), target_pos.astype(int), 5)
 
         if len(self.trajectory) > 1:
             trajectory_points = [
                 pos * scale_factor + np.array([screen_offset_x, screen_offset_y])
                 for pos in self.trajectory
             ]
-            pygame.draw.lines(self.screen, (0, 0, 255), False, trajectory_points, 2)
+            pygame.draw.lines(self.surf, (0, 0, 255), False, trajectory_points, 2)
 
-        pygame.display.flip()
+        if self.render_mode == "human":
+            assert self.screen is not None
+            self.screen.blit(self.surf, (0, 0))
+            self.clock.tick(self.metadata["render_fps"])
+            pygame.display.flip()
+        elif self.render_mode == "rgb_array":
+            return np.transpose(
+                np.array(pygame.surfarray.pixels3d(self.surf)), axes=(1, 0, 2)
+            )
 
     def close(self):
         """
         Clean up the environment
         """
-        pygame.quit()
+        if self.screen is not None:
+            pygame.display.quit()
+            pygame.quit()
