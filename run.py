@@ -13,7 +13,7 @@ from stable_baselines3.common.noise import (
 gym.register(
     id="BeeWorld",
     entry_point=BeeWorld,
-    max_episode_steps=3000,
+    max_episode_steps=1000,
 )
 
 env = gym.make("BeeWorld", render_mode="human")
@@ -21,9 +21,11 @@ env.reset()
 
 # The noise objects for TD3
 n_actions = env.action_space.shape[-1]
-action_noise = NormalActionNoise(
-    mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
-)
+# action_noise = NormalActionNoise(
+# mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
+# )
+
+action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=0.1)
 
 policy_kwargs = {
     "net_arch": [64, 64],  # Specify the number of hidden units per layer

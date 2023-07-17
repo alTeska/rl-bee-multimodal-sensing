@@ -35,6 +35,7 @@ class BeeWorld(gym.Env):
             {
                 "vision": spaces.Discrete(2),
                 "smell": spaces.Box(0, 1, shape=(1,), dtype="float32"),
+                "velocity": spaces.Box(-1, 1, shape=(2,), dtype="float32"),
             }
         )
 
@@ -83,7 +84,13 @@ class BeeWorld(gym.Env):
         """
         Returns a dictionary with agent's current observations
         """
-        return {"vision": self._check_vision(), "smell": self._get_smell()}
+        return {
+            "vision": self._check_vision(),
+            "smell": self._get_smell(),
+            "velocity": np.array(
+                [self._agent_vel, self._agent_ang_vel], dtype="float32"
+            ),
+        }
 
     def _get_info(self):
         """
@@ -103,11 +110,11 @@ class BeeWorld(gym.Env):
         )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
-        self._target_location = self._agent_location
-        while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = (
-                self.np_random.random(size=2, dtype="float32") * self.size
-            )
+        # self._target_location = self._agent_location
+        # while np.array_equal(self._target_location, self._agent_location):
+        self._target_location = self._agent_location + (
+            self.np_random.random(size=2, dtype="float32") * self.size * 0.3
+        )
 
         observation = self._get_obs()
         info = self._get_info()
@@ -132,6 +139,9 @@ class BeeWorld(gym.Env):
         self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
         self._agent_theta += self.dt * self._agent_ang_vel
         self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
+
+        self._agent_ang_vel = np.clip(self._agent_ang_vel, -1, 1)
+        self._agent_vel = np.clip(self._agent_vel, -1, 1)
 
         self._agent_theta = self._agent_theta % (2 * np.pi)
 
