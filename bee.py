@@ -34,13 +34,16 @@ class BeeWorld(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "vision": spaces.Discrete(2),
-                "smell": spaces.Box(0, 1, shape=(1,), dtype=np.float64),
+                "smell": spaces.Box(0, 1, shape=(1,), dtype="float32"),
             }
         )
 
         # Action is a Tuple of (Translational acceleration, Angular acceleration)
-        self.action_space = spaces.Tuple(
-            (spaces.Box(-1, 1, dtype=float), spaces.Box(-1, 1, dtype=float))
+        self.action_space = spaces.Box(
+            -1,
+            1,
+            dtype="float32",
+            shape=(2,),
         )
 
         self.screen: pygame.Surface = None
@@ -52,7 +55,7 @@ class BeeWorld(gym.Env):
     def _check_vision(self):
         """
         Returns 1 if the bee can see the goal and 0 otherwise
-        TODO: implement
+        TODO: add walls
         """
         ray = self._target_location - self._agent_location  # raycast from agent to goal
         ang = (np.arctan2(ray[0], ray[1])) % (2 * np.pi)  # angle of raycast
@@ -91,13 +94,19 @@ class BeeWorld(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self._agent_location = self.np_random.random(size=2, dtype=float) * self.size
+        self._agent_vel = 0.0  # Translational velocity
+        self._agent_theta = 0.0  # Agent's direction as angle from x-axis
+        self._agent_ang_vel = 0.0  # Angular velocity
+
+        self._agent_location = (
+            self.np_random.random(size=2, dtype="float32") * self.size
+        )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
             self._target_location = (
-                self.np_random.random(size=2, dtype=float) * self.size
+                self.np_random.random(size=2, dtype="float32") * self.size
             )
 
         observation = self._get_obs()
@@ -130,7 +139,12 @@ class BeeWorld(gym.Env):
         if any(self._agent_location < 0) or any(self._agent_location > self.size):
             self._agent_location = old_agent_location
 
-        terminated = all(self._agent_location == self._target_location)
+        goal_distance = np.linalg.norm(
+            self._target_location - self._agent_location, ord=2
+        )
+
+        terminated = goal_distance < 1
+
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
@@ -176,7 +190,9 @@ class BeeWorld(gym.Env):
         target_pos += np.array([screen_offset_x, screen_offset_y])
 
         pygame.draw.circle(self.surf, (255, 0, 0), agent_pos.astype(int), 5)
-        pygame.draw.circle(self.surf, (0, 255, 0), target_pos.astype(int), 5)
+        pygame.draw.circle(
+            self.surf, (0, 255, 0), target_pos.astype(int), 1 * scale_factor
+        )
 
         if len(self.trajectory) > 1:
             trajectory_points = [
@@ -201,8 +217,8 @@ class BeeWorld(gym.Env):
             ]
         ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
 
-        pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointl], 2)
-        pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointr], 2)
+        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointl], 2)
+        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointr], 2)
 
         if self.render_mode == "human":
             assert self.screen is not None
