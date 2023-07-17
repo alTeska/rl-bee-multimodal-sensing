@@ -5,6 +5,38 @@ from pygame.locals import *
 from gymnasium import spaces
 
 
+def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
+    """Calculate the positions of two points forming a  vision cone around the agent for the visualization
+
+    Args:
+        agent_location (numpy.ndarray): A 1D numpy array containing the (x, y) coordinates of the agent.
+        agent_theta (float): The angle (in radians) representing the agent's orientation.
+        cone_phi (float): The half-angle (in radians) of the cone from the agent's direction.
+        scale_factor (float): A scaling factor applied to the calculated points.
+
+    Returns:
+        tuple: A tuple containing two 1D numpy arrays, 'point_left' and 'point_right', which represent the
+                positions of the left and right points forming the cone, respectively.
+    """
+    point_left = (
+        agent_location
+        + [
+            2 * np.cos(agent_theta + cone_phi),
+            2 * np.sin(agent_theta + cone_phi),
+        ]
+    ) * scale_factor
+
+    point_right = (
+        agent_location
+        + [
+            2 * np.cos(agent_theta - cone_phi),
+            2 * np.sin(agent_theta - cone_phi),
+        ]
+    ) * scale_factor
+
+    return point_left, point_right
+
+
 class BeeWorld(gym.Env):
     metadata = {
         "render_modes": ["human", "rgb_array"],
@@ -211,24 +243,27 @@ class BeeWorld(gym.Env):
             ]
             pygame.draw.lines(self.surf, (0, 0, 255), False, trajectory_points, 2)
 
-        pointl = (
-            self._agent_location
-            + [
-                2 * np.cos(self._agent_theta + self.cone_phi),
-                2 * np.sin(self._agent_theta + self.cone_phi),
-            ]
-        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
+        pointl, pointr = cone_locations(
+            self._agent_location, self._agent_theta, self.cone_phi, scale_factor
+        ) + np.array([screen_offset_x, screen_offset_y])
 
-        pointr = (
-            self._agent_location
-            + [
-                2 * np.cos(self._agent_theta - self.cone_phi),
-                2 * np.sin(self._agent_theta - self.cone_phi),
-            ]
-        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
-
-        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointl], 2)
-        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointr], 2)
+        pygame.draw.lines(
+            self.surf,
+            (255, 0, 0),
+            False,
+            [
+                agent_pos.astype(int),
+                pointl.astype(int),
+            ],
+            2,
+        )
+        pygame.draw.lines(
+            self.surf,
+            (255, 0, 0),
+            False,
+            [agent_pos.astype(int), pointr.astype(int)],
+            2,
+        )
 
         if self.render_mode == "human":
             assert self.screen is not None
