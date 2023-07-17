@@ -16,16 +16,16 @@ gym.register(
     max_episode_steps=1000,
 )
 
-env = gym.make("BeeWorld", render_mode="human")
+env = gym.make("BeeWorld", render_mode="human", max_episode_steps=1000)
 env.reset()
 
 # The noise objects for TD3
+# action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=0.1) # alternative noise TBD
 n_actions = env.action_space.shape[-1]
-# action_noise = NormalActionNoise(
-# mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
-# )
+action_noise = NormalActionNoise(
+    mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
+)
 
-action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=0.1)
 
 policy_kwargs = {
     "net_arch": [64, 64],  # Specify the number of hidden units per layer

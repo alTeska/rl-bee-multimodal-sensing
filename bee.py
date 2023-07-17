@@ -43,8 +43,13 @@ class BeeWorld(gym.Env):
         "render_fps": 60,
     }
 
-    def __init__(self, size=10, dt=0.1, render_mode="human"):
+    def __init__(self, size=10, dt=0.1, render_mode="human", max_episode_steps=1000):
+        self.dtype = "float32"
         self.render_mode = render_mode
+        self.max_episode_steps = max_episode_steps
+
+        self.steps = 0
+
         self.size = size  # Room size
         self.dt = dt  # Integration timestep
         self._agent_vel = 0.0  # Translational velocity
@@ -66,8 +71,13 @@ class BeeWorld(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "vision": spaces.Discrete(2),
-                "smell": spaces.Box(0, 1, shape=(1,), dtype="float32"),
-                "velocity": spaces.Box(-1, 1, shape=(2,), dtype="float32"),
+                "smell": spaces.Box(0, 1, shape=(1,), dtype=self.dtype),
+                "velocity": spaces.Box(-1, 1, shape=(2,), dtype=self.dtype),
+                "time": spaces.Box(
+                    low=0,
+                    high=self.max_episode_steps,
+                    dtype=self.dtype,
+                ),
             }
         )
 
@@ -75,7 +85,7 @@ class BeeWorld(gym.Env):
         self.action_space = spaces.Box(
             -1,
             1,
-            dtype="float32",
+            dtype=self.dtype,
             shape=(2,),
         )
 
@@ -120,9 +130,14 @@ class BeeWorld(gym.Env):
             "vision": self._check_vision(),
             "smell": self._get_smell(),
             "velocity": np.array(
-                [self._agent_vel, self._agent_ang_vel], dtype="float32"
+                [self._agent_vel, self._agent_ang_vel], dtype=self.dtype
             ),
+            "time": self._get_time(),
         }
+
+    def _get_time(self):
+        self.steps += 1
+        return self.steps / self.max_episode_steps
 
     def _get_info(self):
         """
@@ -138,15 +153,18 @@ class BeeWorld(gym.Env):
         self._agent_ang_vel = 0.0  # Angular velocity
 
         self._agent_location = (
-            self.np_random.random(size=2, dtype="float32") * self.size
+            self.np_random.random(size=2, dtype=self.dtype) * self.size
         )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
-        # self._target_location = self._agent_location
-        # while np.array_equal(self._target_location, self._agent_location):
-        self._target_location = self._agent_location + (
-            self.np_random.random(size=2, dtype="float32") * self.size * 0.3
-        )
+        self._target_location = self._agent_location
+        while np.array_equal(self._target_location, self._agent_location):
+            self._target_location = self.np_random.random(size=2, dtype=self.dtype)
+
+        # location close to the target
+        # self._target_location = self._agent_location + (
+        # self.np_random.random(size=2, dtype=self.dtype) * self.size * 0.3
+        # )
 
         observation = self._get_obs()
         info = self._get_info()
@@ -162,6 +180,7 @@ class BeeWorld(gym.Env):
         """
         Returns (observation, reward, done, info)
         """
+
         old_agent_location = self._agent_location.copy()
 
         self._agent_location += [
@@ -187,8 +206,17 @@ class BeeWorld(gym.Env):
 
         terminated = goal_distance < 1
 
-        reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
+
+        # Rewards
+        reward = 100 if terminated else 0  # Binary sparse rewards
+        reward += observation["smell"][0]
+        reward += observation["vision"]
+        reward -= 0.1 * np.sum(np.abs(action) ** 2)  # Energy expenditure
+        reward -= observation["time"]  # time passed
+
+        print(reward)
+
         info = self._get_info()
 
         self.trajectory.append(self._agent_location.copy())
