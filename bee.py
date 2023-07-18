@@ -122,6 +122,10 @@ class BeeWorld(gym.Env):
             ]
         )
 
+    def _get_time(self):
+        self.steps += 1
+        return np.array([self.steps / self.max_episode_steps], dtype=self.dtype)
+
     def _get_obs(self):
         """
         Returns a dictionary with agent's current observations
@@ -135,10 +139,6 @@ class BeeWorld(gym.Env):
             "time": self._get_time(),
         }
 
-    def _get_time(self):
-        self.steps += 1
-        return self.steps / self.max_episode_steps
-
     def _get_info(self):
         """
         Provides auxiliary information
@@ -148,6 +148,7 @@ class BeeWorld(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
+        self.steps = 0
         self._agent_vel = 0.0  # Translational velocity
         self._agent_theta = 0.0  # Agent's direction as angle from x-axis
         self._agent_ang_vel = 0.0  # Angular velocity
