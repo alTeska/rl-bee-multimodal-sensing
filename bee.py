@@ -5,14 +5,51 @@ from pygame.locals import *
 from gymnasium import spaces
 
 
+def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
+    """Calculate the positions of two points forming a  vision cone around the agent for the visualization
+
+    Args:
+        agent_location (numpy.ndarray): A 1D numpy array containing the (x, y) coordinates of the agent.
+        agent_theta (float): The angle (in radians) representing the agent's orientation.
+        cone_phi (float): The half-angle (in radians) of the cone from the agent's direction.
+        scale_factor (float): A scaling factor applied to the calculated points.
+
+    Returns:
+        tuple: A tuple containing two 1D numpy arrays, 'point_left' and 'point_right', which represent the
+                positions of the left and right points forming the cone, respectively.
+    """
+    point_left = (
+        agent_location
+        + [
+            2 * np.cos(agent_theta + cone_phi),
+            2 * np.sin(agent_theta + cone_phi),
+        ]
+    ) * scale_factor
+
+    point_right = (
+        agent_location
+        + [
+            2 * np.cos(agent_theta - cone_phi),
+            2 * np.sin(agent_theta - cone_phi),
+        ]
+    ) * scale_factor
+
+    return point_left, point_right
+
+
 class BeeWorld(gym.Env):
     metadata = {
         "render_modes": ["human", "rgb_array"],
         "render_fps": 60,
     }
 
-    def __init__(self, size=10, dt=0.1, render_mode="human"):
+    def __init__(self, size=10, dt=0.1, render_mode="human", max_episode_steps=1000):
+        self.dtype = "float32"
         self.render_mode = render_mode
+        self.max_episode_steps = max_episode_steps
+
+        self.steps = 0
+
         self.size = size  # Room size
         self.dt = dt  # Integration timestep
         self._agent_vel = 0.0  # Translational velocity
@@ -34,8 +71,13 @@ class BeeWorld(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 "vision": spaces.Discrete(2),
-                "smell": spaces.Box(0, 1, shape=(1,), dtype="float32"),
-                "velocity": spaces.Box(-1, 1, shape=(2,), dtype="float32"),
+                "smell": spaces.Box(0, 1, shape=(1,), dtype=self.dtype),
+                "velocity": spaces.Box(-1, 1, shape=(2,), dtype=self.dtype),
+                "time": spaces.Box(
+                    low=0,
+                    high=1,
+                    dtype=self.dtype,
+                ),
             }
         )
 
@@ -43,7 +85,7 @@ class BeeWorld(gym.Env):
         self.action_space = spaces.Box(
             -1,
             1,
-            dtype="float32",
+            dtype=self.dtype,
             shape=(2,),
         )
 
@@ -88,9 +130,14 @@ class BeeWorld(gym.Env):
             "vision": self._check_vision(),
             "smell": self._get_smell(),
             "velocity": np.array(
-                [self._agent_vel, self._agent_ang_vel], dtype="float32"
+                [self._agent_vel, self._agent_ang_vel], dtype=self.dtype
             ),
+            "time": self._get_time(),
         }
+
+    def _get_time(self):
+        self.steps += 1
+        return self.steps / self.max_episode_steps
 
     def _get_info(self):
         """
@@ -106,15 +153,18 @@ class BeeWorld(gym.Env):
         self._agent_ang_vel = 0.0  # Angular velocity
 
         self._agent_location = (
-            self.np_random.random(size=2, dtype="float32") * self.size
+            self.np_random.random(size=2, dtype=self.dtype) * self.size
         )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
-        # self._target_location = self._agent_location
-        # while np.array_equal(self._target_location, self._agent_location):
-        self._target_location = self._agent_location + (
-            self.np_random.random(size=2, dtype="float32") * self.size * 0.3
-        )
+        self._target_location = self._agent_location
+        while np.array_equal(self._target_location, self._agent_location):
+            self._target_location = self.np_random.random(size=2, dtype=self.dtype)
+
+        # location close to the target
+        # self._target_location = self._agent_location + (
+        # self.np_random.random(size=2, dtype=self.dtype) * self.size * 0.3
+        # )
 
         observation = self._get_obs()
         info = self._get_info()
@@ -130,6 +180,7 @@ class BeeWorld(gym.Env):
         """
         Returns (observation, reward, done, info)
         """
+
         old_agent_location = self._agent_location.copy()
 
         self._agent_location += [
@@ -154,11 +205,18 @@ class BeeWorld(gym.Env):
         )
 
         terminated = goal_distance < 1
-
-        reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
-        info = self._get_info()
 
+        factor = 0.1
+        # Rewards
+        reward = 100 if terminated else 0  # Binary sparse rewards
+        # reward += observation["smell"][0]
+        # reward += observation["vision"]
+        # reward += observation["time"]  # time passed
+        reward -= np.sum(np.abs(action) ** 2)  # Energy expenditure
+        reward -= goal_distance * factor
+
+        info = self._get_info()
         self.trajectory.append(self._agent_location.copy())
 
         if self.render_mode == "human":
@@ -211,24 +269,27 @@ class BeeWorld(gym.Env):
             ]
             pygame.draw.lines(self.surf, (0, 0, 255), False, trajectory_points, 2)
 
-        pointl = (
-            self._agent_location
-            + [
-                2 * np.cos(self._agent_theta + self.cone_phi),
-                2 * np.sin(self._agent_theta + self.cone_phi),
-            ]
-        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
+        pointl, pointr = cone_locations(
+            self._agent_location, self._agent_theta, self.cone_phi, scale_factor
+        ) + np.array([screen_offset_x, screen_offset_y])
 
-        pointr = (
-            self._agent_location
-            + [
-                2 * np.cos(self._agent_theta - self.cone_phi),
-                2 * np.sin(self._agent_theta - self.cone_phi),
-            ]
-        ) * scale_factor + np.array([screen_offset_x, screen_offset_y])
-
-        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointl], 2)
-        # pygame.draw.lines(self.surf, (255, 0, 0), False, [agent_pos, pointr], 2)
+        pygame.draw.lines(
+            self.surf,
+            (255, 0, 0),
+            False,
+            [
+                agent_pos.astype(int),
+                pointl.astype(int),
+            ],
+            2,
+        )
+        pygame.draw.lines(
+            self.surf,
+            (255, 0, 0),
+            False,
+            [agent_pos.astype(int), pointr.astype(int)],
+            2,
+        )
 
         if self.render_mode == "human":
             assert self.screen is not None
