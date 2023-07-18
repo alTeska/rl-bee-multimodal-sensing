@@ -38,6 +38,7 @@ model = TD3(
     action_noise=action_noise,
     verbose=1,
     policy_kwargs=policy_kwargs,
+    tensorboard_log="./logs/",
 )
 model.learn(total_timesteps=10000, log_interval=10)
 

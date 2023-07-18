@@ -75,7 +75,7 @@ class BeeWorld(gym.Env):
                 "velocity": spaces.Box(-1, 1, shape=(2,), dtype=self.dtype),
                 "time": spaces.Box(
                     low=0,
-                    high=self.max_episode_steps,
+                    high=1,
                     dtype=self.dtype,
                 ),
             }
@@ -205,20 +205,18 @@ class BeeWorld(gym.Env):
         )
 
         terminated = goal_distance < 1
-
         observation = self._get_obs()
 
+        factor = 0.1
         # Rewards
         reward = 100 if terminated else 0  # Binary sparse rewards
-        reward += observation["smell"][0]
-        reward += observation["vision"]
-        reward -= 0.1 * np.sum(np.abs(action) ** 2)  # Energy expenditure
-        reward -= observation["time"]  # time passed
-
-        print(reward)
+        # reward += observation["smell"][0]
+        # reward += observation["vision"]
+        # reward += observation["time"]  # time passed
+        reward -= np.sum(np.abs(action) ** 2)  # Energy expenditure
+        reward -= goal_distance * factor
 
         info = self._get_info()
-
         self.trajectory.append(self._agent_location.copy())
 
         if self.render_mode == "human":
