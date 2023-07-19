@@ -188,9 +188,10 @@ class BeeWorld(gym.Env):
         old_agent_location = self._agent_location.copy()
 
         self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
-        self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
-        self._agent_ang_vel = np.clip(self._agent_ang_vel, -1, 1)
         self._agent_vel = np.clip(self._agent_vel, -1, 1)
+
+        self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
+        self._agent_ang_vel = np.clip(self._agent_ang_vel, -0.3, 0.3)
 
         self._agent_theta += self.dt * self._agent_ang_vel
         self._agent_theta = self._agent_theta % (2 * np.pi)
