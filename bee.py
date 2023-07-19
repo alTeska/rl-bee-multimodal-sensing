@@ -119,7 +119,8 @@ class BeeWorld(gym.Env):
                 np.exp(
                     -np.linalg.norm(self._agent_location - self._target_location, ord=2)
                 )
-            ]
+            ],
+            dtype=self.dtype,
         )
 
     def _get_time(self):
@@ -160,7 +161,9 @@ class BeeWorld(gym.Env):
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.random(size=2, dtype=self.dtype)
+            self._target_location = self.np_random.random(size=2, dtype=self.dtype) * (
+                self.size - 4
+            ) + [2.0, 2.0]
 
         # location close to the target
         # self._target_location = self._agent_location + (
@@ -184,18 +187,18 @@ class BeeWorld(gym.Env):
 
         old_agent_location = self._agent_location.copy()
 
+        self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
+        self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
+        self._agent_ang_vel = np.clip(self._agent_ang_vel, -1, 1)
+        self._agent_vel = np.clip(self._agent_vel, -1, 1)
+
+        self._agent_theta += self.dt * self._agent_ang_vel
+        self._agent_theta = self._agent_theta % (2 * np.pi)
+
         self._agent_location += [
             self.dt * self._agent_vel * np.cos(self._agent_theta),
             self.dt * self._agent_vel * np.sin(self._agent_theta),
         ]
-        self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
-        self._agent_theta += self.dt * self._agent_ang_vel
-        self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
-
-        self._agent_ang_vel = np.clip(self._agent_ang_vel, -1, 1)
-        self._agent_vel = np.clip(self._agent_vel, -1, 1)
-
-        self._agent_theta = self._agent_theta % (2 * np.pi)
 
         # Check if the agent is outside the valid range
         if any(self._agent_location < 0) or any(self._agent_location > self.size):
@@ -205,16 +208,16 @@ class BeeWorld(gym.Env):
             self._target_location - self._agent_location, ord=2
         )
 
-        terminated = goal_distance < 1
+        terminated = goal_distance < 2
         observation = self._get_obs()
 
-        factor = 0.1
+        factor = 0.01
         # Rewards
-        reward = 100 if terminated else 0  # Binary sparse rewards
+        reward = 1000 if terminated else 0  # Binary sparse rewards
         # reward += observation["smell"][0]
         # reward += observation["vision"]
         # reward += observation["time"]  # time passed
-        reward -= np.sum(np.abs(action) ** 2)  # Energy expenditure
+        reward -= 0.3 * np.sum(np.abs(action) ** 2)  # Energy expenditure
         reward -= goal_distance * factor
 
         info = self._get_info()
@@ -228,7 +231,7 @@ class BeeWorld(gym.Env):
 
             self.render()
 
-        return observation, reward, terminated, False, info
+        return observation, reward, terminated, terminated, info
 
     def render(self, scale=0.9):
         """
@@ -260,7 +263,7 @@ class BeeWorld(gym.Env):
 
         pygame.draw.circle(self.surf, (255, 0, 0), agent_pos.astype(int), 5)
         pygame.draw.circle(
-            self.surf, (0, 255, 0), target_pos.astype(int), 1 * scale_factor
+            self.surf, (0, 255, 0), target_pos.astype(int), 2 * scale_factor
         )
 
         if len(self.trajectory) > 1:
