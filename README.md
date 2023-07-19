@@ -4,11 +4,12 @@ Neuromatch group project: Relevance of sensory modalities for spatial navigation
 
 ## TODO model wise:
 1. Testing different architectures
-2. Reward testing 
+2. Make goal smaller
+3. Reward testing 
    1. Adding senses
    2. Time passed punshiment
    3. wall hitting punishment
-3. Increasing/gradually shrinking the goal size whilst training
+4. Increasing/gradually shrinking the goal size whilst training
 
 ## TODO code wise:
 1. unit / functional testing 
