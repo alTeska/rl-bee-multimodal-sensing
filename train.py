@@ -1,4 +1,6 @@
 import os
+import argparse
+
 import numpy as np
 import torch.nn as nn
 
@@ -11,6 +13,7 @@ from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnNoMod
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+
 
 def create_directories(models_dir, model_algo, logs_dir):
 
@@ -37,7 +40,7 @@ def initialise_gym(gymName):
 
     return env
 
-def initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch=[100,100], activation_fnn=nn.ReLU, lr=0.01):
+def initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch, activation_fnn, lr):
 
 
     # set up the logger and early stopping callback
@@ -79,7 +82,10 @@ def initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch=[100,100
 
     return model, eval_callback
 
-def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_algo = 'TD3', timesteps=10000, iters_max=10):
+def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_algo = 'TD3', timesteps=10000, iters_max=10,
+          net_arch=[100,100], activation_fnn=nn.ReLU, lr=0.01):
+
+    print(gymName, base_path, model_algo, timesteps, iters_max, net_arch, activation_fnn)
 
     models_dir = base_path + 'models/'
     logs_dir = base_path + 'logs/'
@@ -89,7 +95,7 @@ def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_alg
     env = initialise_gym(gymName)
 
     # initialise the RL model
-    model, eval_callback = initialise_RL_model(env, models_dir, model_algo, logs_dir)
+    model, eval_callback = initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch, activation_fnn, lr)
 
     # train the RL model
     vec_env = model.get_env()
@@ -118,3 +124,29 @@ def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_alg
             model.save_replay_buffer(replay_buffer_path)
 
     env.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train the RL model.")
+    parser.add_argument("--gymName", type=str, default="BeeWorld", help="Gym environment name.")
+    parser.add_argument("--base_path", type=str, default="drive/MyDrive/neuromatch/", help="Base path.")
+    parser.add_argument("--model_algo", type=str, default="TD3", help="RL model algorithm.")
+    parser.add_argument("--timesteps", type=int, default=10000, help="Total timesteps per iteration.")
+    parser.add_argument("--iters_max", type=int, default=10, help="Maximum number of iterations.")
+    parser.add_argument("--net_arch", nargs="+", type=int, default=[100, 100], help="Neural network architecture.")
+    parser.add_argument("--activation_fnn", type=str, default="ReLU", help="Activation function for the neural network.")
+    parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
+
+    args = parser.parse_args()
+
+    # call the train function with the parsed arguments
+    train(
+        gymName=args.gymName,
+        base_path=args.base_path,
+        model_algo=args.model_algo,
+        timesteps=args.timesteps,
+        iters_max=args.iters_max,
+        net_arch=args.net_arch,
+        activation_fnn=getattr(nn, args.activation_fnn),
+        lr=args.lr,
+    )
