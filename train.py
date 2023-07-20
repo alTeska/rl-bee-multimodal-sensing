@@ -19,7 +19,7 @@ gym.register(
 env = gym.make("BeeWorld", render_mode="rgb_array", max_episode_steps=1000)
 env.reset()
 
-
+n_actions = 2
 action_noise = NormalActionNoise(
     mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
 )
@@ -39,13 +39,4 @@ model = TD3(
     tensorboard_log="./logs/",
 )
 model.learn(total_timesteps=1000000, log_interval=10)
-
-vec_env = model.get_env()
-obs = vec_env.reset()
-
-while not dones:
-    action, _states = model.predict(obs)
-    obs, rewards, dones, info = vec_env.step(action)
-
-env.close()
 model.save("test2")

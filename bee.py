@@ -43,7 +43,14 @@ class BeeWorld(gym.Env):
         "render_fps": 60,
     }
 
-    def __init__(self, size=10, dt=0.1, render_mode="human", max_episode_steps=1000):
+    def __init__(
+        self,
+        size=10,
+        dt=0.1,
+        render_mode="human",
+        max_episode_steps=1000,
+        goal_size=2.0,
+    ):
         self.dtype = "float32"
         self.render_mode = render_mode
         self.max_episode_steps = max_episode_steps
@@ -60,6 +67,8 @@ class BeeWorld(gym.Env):
         self.angular_acceleration_range = 0.1
 
         self.cone_phi = np.pi / 8  # Vision cone angle
+
+        self.goal_size = goal_size
 
         self.walls = [
             (0, 0),
@@ -162,8 +171,11 @@ class BeeWorld(gym.Env):
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
             self._target_location = self.np_random.random(size=2, dtype=self.dtype) * (
-                self.size - 4
-            ) + [2.0, 2.0]
+                self.size - 2 * self.goal_size
+            ) + [
+                self.goal_size,
+                self.goal_size,
+            ]  # make sure that the entire goal is within the arena
 
         # location close to the target
         # self._target_location = self._agent_location + (
@@ -209,7 +221,7 @@ class BeeWorld(gym.Env):
             self._target_location - self._agent_location, ord=2
         )
 
-        terminated = goal_distance < 2
+        terminated = goal_distance < self.goal_size
         observation = self._get_obs()
 
         factor = 0.01
@@ -264,7 +276,10 @@ class BeeWorld(gym.Env):
 
         pygame.draw.circle(self.surf, (255, 0, 0), agent_pos.astype(int), 5)
         pygame.draw.circle(
-            self.surf, (0, 255, 0), target_pos.astype(int), 2 * scale_factor
+            self.surf,
+            (0, 255, 0),
+            target_pos.astype(int),
+            self.goal_size * scale_factor,
         )
 
         if len(self.trajectory) > 1:
