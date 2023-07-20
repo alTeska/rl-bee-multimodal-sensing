@@ -112,6 +112,7 @@ class BeeWorld(gym.Env):
             [(0.0, self.size), (self.size, self.size)],
             [(self.size, 0.0), (self.size, self.size)],
             # [(self.size / 2, 2.0), (self.size / 2, 8.0)],
+            # [(2.0, self.size / 2), (8.0, self.size / 2)],
         ]
 
         self.observation_space = spaces.Dict(
@@ -219,6 +220,30 @@ class BeeWorld(gym.Env):
         """
         return {"is_success": False}
 
+    def _check_goal_intersections(self):
+        for wall in self.walls:
+            if np.linalg.norm(self._target_location - wall[0], ord=2) < self.goal_size:
+                return True
+            if np.linalg.norm(self._target_location - wall[1], ord=2) < self.goal_size:
+                return True
+
+            wall_vector = np.array(wall[1]) - wall[0]
+            target_vector = self._target_location - wall[0]
+            a = np.linalg.norm(target_vector, ord=2)
+            c = np.linalg.norm(wall_vector, ord=2)
+
+            projection = np.dot(target_vector, wall_vector) / c
+
+            if (projection > c) or (projection < 0):
+                continue
+
+            dist = np.sqrt(a**2 - projection**2)
+
+            if dist < self.goal_size:
+                return True
+
+        return False
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
@@ -234,12 +259,11 @@ class BeeWorld(gym.Env):
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.random(size=2, dtype=self.dtype) * (
-                self.size - 2 * self.goal_size
-            ) + [
-                self.goal_size,
-                self.goal_size,
-            ]  # make sure that the entire goal is within the arena
+            self._target_location = (
+                self.np_random.random(size=2, dtype=self.dtype) * self.size
+            )
+            if self._check_goal_intersections():
+                self._target_location = self._agent_location
 
         # location close to the target
         # self._target_location = self._agent_location + (
