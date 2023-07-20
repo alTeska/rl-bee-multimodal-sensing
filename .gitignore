@@ -1,6 +1,8 @@
 # Custom:
 logs/
-
+test_logs/
+models/
+test_models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
