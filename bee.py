@@ -145,17 +145,21 @@ class BeeWorld(gym.Env):
     def _check_vision(self):
         """
         Returns 1 if the bee can see the goal and 0 otherwise
-        TODO: add walls
         """
         ray = self._target_location - self._agent_location  # raycast from agent to goal
         ang = (np.arctan2(ray[0], ray[1])) % (2 * np.pi)  # angle of raycast
 
         diff = np.abs(ang - self._agent_theta)
 
-        if (diff < self.cone_phi) or ((2 * np.pi - diff) < self.cone_phi):
-            return 1
+        if (diff > self.cone_phi) and ((2 * np.pi - diff) > self.cone_phi):
+            return 0
 
-        return 0
+        if self.segment_wall_intersections(
+            [self._agent_location, self._target_location]
+        ):
+            return 0
+
+        return 1
 
     def _get_smell(self):
         """
