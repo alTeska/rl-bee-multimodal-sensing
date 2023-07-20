@@ -9,6 +9,8 @@ from stable_baselines3.common.noise import (
     OrnsteinUhlenbeckActionNoise,
 )
 
+from gymnasium.wrappers.record_video import RecordVideo
+
 
 gym.register(
     id="BeeWorld",
@@ -17,6 +19,7 @@ gym.register(
 )
 
 env = gym.make("BeeWorld", render_mode="rgb_array", max_episode_steps=1000)
+env = RecordVideo(env, "video", lambda x: x % 20 == 0)
 env.reset()
 
 n_actions = 2
@@ -35,8 +38,8 @@ model = TD3(
     action_noise=action_noise,
     verbose=1,
     policy_kwargs=policy_kwargs,
-    learning_rate=0.01,
+    learning_rate=0.001,
     tensorboard_log="./logs/",
 )
-model.learn(total_timesteps=1000000, log_interval=10)
+model.learn(total_timesteps=200_000, log_interval=10)
 model.save("test2")

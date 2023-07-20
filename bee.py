@@ -123,6 +123,7 @@ class BeeWorld(gym.Env):
                     high=1,
                     dtype=self.dtype,
                 ),
+                "wall": spaces.Box(0, 1, dtype=self.dtype),
             }
         )
 
@@ -172,6 +173,18 @@ class BeeWorld(gym.Env):
         self.steps += 1
         return np.array([self.steps / self.max_episode_steps], dtype=self.dtype)
 
+    def _get_visible_wall(self):
+        central_point = self._agent_location + [
+            20 * np.cos(self._agent_theta),
+            20 * np.sin(self._agent_theta),
+        ]
+
+        ints = self.segment_wall_intersections([self._agent_location, central_point])
+        assert ints
+
+        ds = [np.linalg.norm(np.array(i) - self._agent_location, ord=2) for i in ints]
+        return np.array([min(ds) / self.size], dtype=self.dtype)
+
     def _get_obs(self):
         """
         Returns a dictionary with agent's current observations
@@ -183,6 +196,7 @@ class BeeWorld(gym.Env):
                 [self._agent_vel, self._agent_ang_vel], dtype=self.dtype
             ),
             "time": self._get_time(),
+            "wall": self._get_visible_wall(),
         }
 
     def _get_info(self):
@@ -228,7 +242,7 @@ class BeeWorld(gym.Env):
 
         return observation, info
 
-    def check_walls(self, seg):
+    def segment_wall_intersections(self, seg):
         """Check whether a segment intesects with any walls
 
         Args:
@@ -247,11 +261,12 @@ class BeeWorld(gym.Env):
         """
         Returns (observation, reward, done, info)
         """
+        reward = 0
 
         old_agent_location = self._agent_location.copy()
 
         self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
-        self._agent_vel = np.clip(self._agent_vel, -1, 1)
+        self._agent_vel = np.clip(self._agent_vel, 0, 1)
 
         self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
         self._agent_ang_vel = np.clip(self._agent_ang_vel, -0.3, 0.3)
@@ -264,11 +279,12 @@ class BeeWorld(gym.Env):
             self.dt * self._agent_vel * np.sin(self._agent_theta),
         ]
 
-        if wall_intersections := self.check_walls(
+        if wall_intersections := self.segment_wall_intersections(
             [old_agent_location, self._agent_location]
         ):
             self._agent_location = old_agent_location
             self._agent_vel = 0
+            reward -= 100
 
         goal_distance = np.linalg.norm(
             self._target_location - self._agent_location, ord=2
@@ -279,7 +295,7 @@ class BeeWorld(gym.Env):
 
         factor = 0.01
         # Rewards
-        reward = 1000 if terminated else 0  # Binary sparse rewards
+        reward += 1000 if terminated else 0  # Binary sparse rewards
         # reward += observation["smell"][0]
         # reward += observation["vision"]
         # reward += observation["time"]  # time passed
