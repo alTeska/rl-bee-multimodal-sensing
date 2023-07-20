@@ -20,7 +20,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 def init_gym(gym_name, logs_path=None, render_mode="rgb_array"):
-    # initialise Gym env
+    """Initialise the gym environment with given setup"""
     gym.register(
         id=gym_name,
         entry_point=BeeWorld,
@@ -36,15 +36,16 @@ def init_gym(gym_name, logs_path=None, render_mode="rgb_array"):
     return env
 
 
-def init_model(env, net_arch, activation_fnn, learning_rate, logger=None):
-    """Initialise the model with given setup,
-    TODO: maybe just expose the policy_kwargs as a parameter?"""
-
-    # policy_kwargs = {
-    #     "net_arch": [100, 100],  # Specify the number of hidden units per layer
-    #     "activation_fn": nn.ReLU,  # Specify the activation function
-    # }
-
+def init_model(
+    env,
+    policy_kwargs={
+        "net_arch": [100, 100],
+        "activation_fn": nn.ReLU,
+    },
+    learning_rate=0.01,
+    logger=None,
+):
+    """Initialise the model with given setup"""
     n_actions = env.action_space.shape[-1]
     action_noise = NormalActionNoise(
         mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
@@ -98,6 +99,8 @@ def train(
     activation_fnn=nn.ReLU,
     learning_rate=0.01,
 ):
+    # TODO: maybe just expose the policy_kwargs as a parameter?
+
     print(
         gym_name, base_path, model_algo, timesteps, iters_max, net_arch, activation_fnn
     )
@@ -115,7 +118,9 @@ def train(
     # initialise Gym
     env = init_gym(gym_name, logs_path)
     callback, logger = setup_logging(env, logs_path, best_model_save_path)
-    model = init_model(env, net_arch, activation_fnn, learning_rate, logger=logger)
+
+    policy_kwargs = {"net_arch": net_arch, "activation_fn": activation_fnn}
+    model = init_model(env, policy_kwargs, learning_rate, logger=logger)
 
     # train the RL model
     vec_env = model.get_env()

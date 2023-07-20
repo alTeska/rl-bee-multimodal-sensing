@@ -8,7 +8,7 @@ from stable_baselines3 import TD3
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-def retrieve_latest_model(path):
+def retrieve_latest_model_path(path):
     """load the latest model saved during training"""
     max_number = float("-inf")
     max_filename = ""
@@ -32,7 +32,7 @@ def test(
     prediction_steps=1000,
 ):
     models_path = base_path + "models/" + model_algo
-    latest_model_path = retrieve_latest_model(models_path)
+    latest_model_path = retrieve_latest_model_path(models_path)
 
     loaded_model = TD3.load(latest_model_path)
     loaded_model.set_env(
@@ -43,12 +43,15 @@ def test(
     obs = vec_env.reset()
 
     # TODO: depending on function design, we should save the frames or at least return them? or are they saved automatically?
+
     frames = []
     for i in trange(prediction_steps):
         action, _states = loaded_model.predict(obs)
         obs, rewards, dones, info = vec_env.step(action)
 
         frames.append(vec_env.render())
+
+    return frames
 
 
 if __name__ == "__main__":
@@ -63,10 +66,10 @@ if __name__ == "__main__":
         "--model_algo", type=str, default="TD3", help="RL model algorithm."
     )
     parser.add_argument(
-        "--range_max",
+        "--prediction_steps",
         type=int,
         default=1000,
-        help="Max range to use during evaluation.",
+        help="Number of prediction steps to use during evaluation.",
     )
 
     args = parser.parse_args()
@@ -75,5 +78,5 @@ if __name__ == "__main__":
         gym_name=args.gym_name,
         base_path=args.base_path,
         model_algo=args.model_algo,
-        range_max=args.range_max,
+        prediction_steps=args.prediction_steps,
     )
