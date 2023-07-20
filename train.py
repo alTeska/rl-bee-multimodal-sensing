@@ -1,65 +1,44 @@
 import os
 import argparse
-
 import numpy as np
 import torch.nn as nn
-
 import gymnasium as gym
 from bee import BeeWorld
-
+from utils import create_directory
 from stable_baselines3 import TD3
-from stable_baselines3.common.noise import NormalActionNoise  # other: OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnNoModelImprovement
+from stable_baselines3.common.noise import (
+    NormalActionNoise,
+    # OrnsteinUhlenbeckActionNoise
+)
+from stable_baselines3.common.callbacks import (
+    EvalCallback,
+    StopTrainingOnNoModelImprovement,
+)
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-def create_directories(models_dir, model_algo, logs_dir):
-
-    # create directories for trained model and log saving
-    algo_path = models_dir + '{}'.format(model_algo)
-    if not os.path.exists(algo_path):
-        os.makedirs(algo_path, exist_ok=True)
-
-    if not os.path.exists(logs_dir):
-        os.makedirs(logs_dir, exist_ok=True)
-
-
-def initialise_gym(gymName):
-
+def init_gym(gym_name, logs_path=None):
     # initialise Gym env
     gym.register(
-        id=gymName,
+        id=gym_name,
         entry_point=BeeWorld,
         max_episode_steps=3000,
     )
 
-    env = gym.make(gymName, render_mode="rgb_array")
+    env = gym.make(gym_name, render_mode="rgb_array")
     env.reset()
+
+    if logs_path:
+        env = Monitor(env, logs_path, allow_early_resets=True)
 
     return env
 
-def initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch, activation_fnn, lr):
 
-
-    # set up the logger and early stopping callback
-    env = Monitor(env, logs_dir, allow_early_resets=True)
-
-    logger = configure("test_logs", ["stdout", "csv", "log", "tensorboard", "json"])
-    stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=3, min_evals=5, verbose=1)
-
-    eval_callback = EvalCallback(env,
-                                 callback_after_eval=stop_train_callback,
-                                 best_model_save_path=models_dir + '{}'.format(model_algo),
-                                 log_path=logs_dir,
-                                 eval_freq=1000,
-                                 n_eval_episodes=10,
-                                 deterministic=True,
-                                 render=False)
-
-
-    # create the model
+def init_model(env, net_arch, activation_fnn, learning_rate, logger=None):
+    """Initialise the model with given setup,
+    TODO: maybe just expose the policy_kwargs as a parameter?"""
     n_actions = env.action_space.shape[-1]
     action_noise = NormalActionNoise(
         mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
@@ -70,32 +49,67 @@ def initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch, activat
         env,
         action_noise=action_noise,
         verbose=1,
-        policy_kwargs = {
+        policy_kwargs={
             "net_arch": net_arch,
             "activation_fn": activation_fnn,
         },
-        learning_rate=lr
+        learning_rate=learning_rate,
     )
 
-    # set custom logger
-    model.set_logger(logger)
+    if logger:
+        model.set_logger(logger)
 
-    return model, eval_callback
+    return model
 
-def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_algo = 'TD3', timesteps=10000, iters_max=10,
-          net_arch=[100,100], activation_fnn=nn.ReLU, lr=0.01):
 
-    print(gymName, base_path, model_algo, timesteps, iters_max, net_arch, activation_fnn)
+def setup_logging(env, logs_path, best_model_save_path):
+    logger = configure("test_logs", ["stdout", "csv", "log", "tensorboard", "json"])
+    stop_train_callback = StopTrainingOnNoModelImprovement(
+        max_no_improvement_evals=3, min_evals=5, verbose=1
+    )
+    # set up the logger and early stopping callback
+    eval_callback = EvalCallback(
+        env,
+        callback_after_eval=stop_train_callback,
+        best_model_save_path=best_model_save_path,
+        log_path=logs_path,
+        eval_freq=1000,
+        n_eval_episodes=10,
+        deterministic=True,
+        render=False,
+    )
 
-    models_dir = base_path + 'models/'
-    logs_dir = base_path + 'logs/'
-    replay_buffer_dir = base_path + 'replay_buffer/'
+    return eval_callback, logger
+
+
+def train(
+    gym_name="BeeWorld",
+    base_path="drive/MyDrive/neuromatch/",
+    model_algo="TD3",
+    timesteps=10000,
+    iters_max=10,
+    net_arch=[100, 100],
+    activation_fnn=nn.ReLU,
+    learning_rate=0.01,
+):
+    print(
+        gym_name, base_path, model_algo, timesteps, iters_max, net_arch, activation_fnn
+    )
+
+    models_path = base_path + "models/"
+    logs_path = base_path + "logs/"
+    replay_buffer_path = base_path + "replay_buffer/"
+    best_model_save_path = models_path + "{}".format(model_algo)
+
+    create_directory(models_path)
+    create_directory(logs_path)
+    create_directory(replay_buffer_path)
+    create_directory(best_model_save_path)
 
     # initialise Gym
-    env = initialise_gym(gymName)
-
-    # initialise the RL model
-    model, eval_callback = initialise_RL_model(env, models_dir, model_algo, logs_dir, net_arch, activation_fnn, lr)
+    env = init_gym(gym_name, logs_path)
+    callback, logger = setup_logging(env, logs_path, best_model_save_path)
+    model = init_model(env, net_arch, activation_fnn, learning_rate, logger=logger)
 
     # train the RL model
     vec_env = model.get_env()
@@ -106,20 +120,29 @@ def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_alg
     while iters < iters_max:
         iters += 1
 
-        model_name = model_algo + '_' + str(timesteps*iters)
-        model_path = models_dir + model_algo + '/' + model_name
-        replay_buffer_path = replay_buffer_dir + model_algo + '/' + model_name
+        model_name = model_algo + "_" + str(timesteps * iters)
+        model_path = models_path + model_algo + "/" + model_name
+        replay_buffer_path = replay_buffer_path + model_algo + "/" + model_name
+
+        cur_model_zip_path = model_path + ".zip"
 
         # if we already have saved the model learning at this stage, load that model
-        cur_model_zip_path = model_path + '.zip'
+        # TODO: it is a bit akward, cause we just retrained the model and then check if exists and pick the old model?
         if os.path.exists(cur_model_zip_path):
-            print('Loading this model:', cur_model_zip_path)
+            print("Loading this model:", cur_model_zip_path)
             model = TD3.load(cur_model_zip_path)
-            model.set_env(DummyVecEnv([lambda: gym.make("BeeWorld", render_mode="rgb_array")]))
+            model.set_env(
+                DummyVecEnv([lambda: gym.make("BeeWorld", render_mode="rgb_array")])
+            )
             model.load_replay_buffer(replay_buffer_path)
+
         # train the model if no model saved at this stage yet
         else:
-            model.learn(total_timesteps=timesteps, reset_num_timesteps=False, callback=eval_callback)
+            model.learn(
+                total_timesteps=timesteps,
+                reset_num_timesteps=False,
+                callback=callback,
+            )
             model.save(model_path)
             model.save_replay_buffer(replay_buffer_path)
 
@@ -128,25 +151,46 @@ def train(gymName='BeeWorld', base_path = 'drive/MyDrive/neuromatch/', model_alg
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the RL model.")
-    parser.add_argument("--gymName", type=str, default="BeeWorld", help="Gym environment name.")
-    parser.add_argument("--base_path", type=str, default="drive/MyDrive/neuromatch/", help="Base path.")
-    parser.add_argument("--model_algo", type=str, default="TD3", help="RL model algorithm.")
-    parser.add_argument("--timesteps", type=int, default=10000, help="Total timesteps per iteration.")
-    parser.add_argument("--iters_max", type=int, default=10, help="Maximum number of iterations.")
-    parser.add_argument("--net_arch", nargs="+", type=int, default=[100, 100], help="Neural network architecture.")
-    parser.add_argument("--activation_fnn", type=str, default="ReLU", help="Activation function for the neural network.")
+    parser.add_argument(
+        "--gym_name", type=str, default="BeeWorld", help="Gym environment name."
+    )
+    parser.add_argument(
+        "--base_path", type=str, default="drive/MyDrive/neuromatch/", help="Base path."
+    )
+    parser.add_argument(
+        "--model_algo", type=str, default="TD3", help="RL model algorithm."
+    )
+    parser.add_argument(
+        "--timesteps", type=int, default=10000, help="Total timesteps per iteration."
+    )
+    parser.add_argument(
+        "--iters_max", type=int, default=10, help="Maximum number of iterations."
+    )
+    parser.add_argument(
+        "--net_arch",
+        nargs="+",
+        type=int,
+        default=[100, 100],
+        help="Neural network architecture.",
+    )
+    parser.add_argument(
+        "--activation_fnn",
+        type=str,
+        default="ReLU",
+        help="Activation function for the neural network.",
+    )
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate.")
 
     args = parser.parse_args()
 
     # call the train function with the parsed arguments
     train(
-        gymName=args.gymName,
+        gym_name=args.gym_name,
         base_path=args.base_path,
         model_algo=args.model_algo,
         timesteps=args.timesteps,
         iters_max=args.iters_max,
         net_arch=args.net_arch,
         activation_fnn=getattr(nn, args.activation_fnn),
-        lr=args.lr,
+        learning_rate=args.lr,
     )
