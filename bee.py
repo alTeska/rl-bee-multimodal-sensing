@@ -37,6 +37,42 @@ def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
     return point_left, point_right
 
 
+def intersect_segments(sA, sB):
+    """Return an intersection point for two line segments
+    https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection?useskin=vector#Given_two_points_on_each_line_segment
+
+    Args:
+        sA (_type_): segment A
+        sB (_type_): segment B
+    """
+    pA1, pA2 = sA
+    pB1, pB2 = sB
+
+    x1, y1 = pA1
+    x2, y2 = pA2
+    x3, y3 = pB1
+    x4, y4 = pB2
+
+    div = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+    if div == 0:
+        return (None, None)
+
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / (div)
+    u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / (div)
+
+    if (t < 0.0) or (t > 1.0):
+        return (None, None)
+
+    if (u < 0.0) or (u > 1.0):
+        return (None, None)
+
+    px = x1 + t * (x2 - x1)
+    py = y1 + t * (y2 - y1)
+
+    return (px, py)
+
+
 class BeeWorld(gym.Env):
     metadata = {
         "render_modes": ["human", "rgb_array"],
@@ -71,10 +107,10 @@ class BeeWorld(gym.Env):
         self.goal_size = goal_size
 
         self.walls = [
-            (0, 0),
-            (self.size, 0),
-            (0, self.size),
-            (self.size, self.size),
+            [(0.0, 0.0), (0.0, self.size)],
+            [(0.0, 0.0), (self.size, 0.0)],
+            [(0.0, self.size), (self.size, self.size)],
+            [(self.size, 0.0), (self.size, self.size)],
         ]
 
         self.observation_space = spaces.Dict(
@@ -192,6 +228,21 @@ class BeeWorld(gym.Env):
 
         return observation, info
 
+    def check_walls(self, seg):
+        """Check whether a segment intesects with any walls
+
+        Args:
+            seg (_type_): line segment
+        """
+        p = []
+
+        for wall in self.walls:
+            point = intersect_segments(seg, wall)
+            if point[0] is not None:
+                p.append(point)
+
+        return p
+
     def step(self, action):
         """
         Returns (observation, reward, done, info)
@@ -213,9 +264,11 @@ class BeeWorld(gym.Env):
             self.dt * self._agent_vel * np.sin(self._agent_theta),
         ]
 
-        # Check if the agent is outside the valid range
-        if any(self._agent_location < 0) or any(self._agent_location > self.size):
+        if wall_intersections := self.check_walls(
+            [old_agent_location, self._agent_location]
+        ):
             self._agent_location = old_agent_location
+            self._agent_vel = 0
 
         goal_distance = np.linalg.norm(
             self._target_location - self._agent_location, ord=2
@@ -310,6 +363,23 @@ class BeeWorld(gym.Env):
             [agent_pos.astype(int), pointr.astype(int)],
             2,
         )
+
+        for wall in self.walls:
+            pygame.draw.lines(
+                self.surf,
+                (0, 0, 0),
+                False,
+                [
+                    (
+                        np.array(wall[0]) * scale_factor
+                        + np.array([screen_offset_x, screen_offset_y])
+                    ).astype(int),
+                    (
+                        np.array(wall[1]) * scale_factor
+                        + np.array([screen_offset_x, screen_offset_y])
+                    ).astype(int),
+                ],
+            )
 
         if self.render_mode == "human":
             assert self.screen is not None
