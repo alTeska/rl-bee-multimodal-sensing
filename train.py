@@ -74,7 +74,7 @@ def setup_logging(env, logs_path, best_model_save_path):
     stop_train_callback = StopTrainingOnNoModelImprovement(
         max_no_improvement_evals=3, min_evals=5, verbose=1
     )
-    # set up the logger and early stopping callback
+    """Set up the logger and early stopping callback"""
     eval_callback = EvalCallback(
         env,
         callback_after_eval=stop_train_callback,

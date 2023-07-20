@@ -1,9 +1,7 @@
 import os
 import argparse
-from tqdm.notebook import trange
-
 import gymnasium as gym
-
+from tqdm.notebook import trange
 from stable_baselines3 import TD3
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -25,20 +23,26 @@ def retrieve_latest_model_path(path):
     return max_filename
 
 
+def load_model(path):
+    """load the latest model saved during training"""
+    loaded_model = TD3.load(latest_model_path)
+    loaded_model.set_env(
+        DummyVecEnv([lambda: gym.make(gym_name, render_mode="rgb_array")])
+    )
+    return loaded_model
+
+
 def test(
     gym_name="BeeWorld",
     base_path="drive/MyDrive/neuromatch/",
     model_algo="TD3",
     prediction_steps=1000,
 ):
+    """Load the existing model and generate the prediction frames"""
     models_path = base_path + "models/" + model_algo
     latest_model_path = retrieve_latest_model_path(models_path)
 
-    loaded_model = TD3.load(latest_model_path)
-    loaded_model.set_env(
-        DummyVecEnv([lambda: gym.make(gym_name, render_mode="rgb_array")])
-    )
-
+    loaded_model = load_model(latest_model_path)
     vec_env = loaded_model.get_env()
     obs = vec_env.reset()
 
