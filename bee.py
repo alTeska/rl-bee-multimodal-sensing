@@ -111,6 +111,7 @@ class BeeWorld(gym.Env):
             [(0.0, 0.0), (self.size, 0.0)],
             [(0.0, self.size), (self.size, self.size)],
             [(self.size, 0.0), (self.size, self.size)],
+            # [(self.size / 2, 2.0), (self.size / 2, 8.0)],
         ]
 
         self.observation_space = spaces.Dict(
@@ -173,17 +174,26 @@ class BeeWorld(gym.Env):
         self.steps += 1
         return np.array([self.steps / self.max_episode_steps], dtype=self.dtype)
 
-    def _get_visible_wall(self):
-        central_point = self._agent_location + [
-            20 * np.cos(self._agent_theta),
-            20 * np.sin(self._agent_theta),
-        ]
+    def _get_visible_wall(self, n_casts=7):
+        mins = []
 
-        ints = self.segment_wall_intersections([self._agent_location, central_point])
-        assert ints
+        angles = np.linspace(-self.cone_phi, self.cone_phi, n_casts)
 
-        ds = [np.linalg.norm(np.array(i) - self._agent_location, ord=2) for i in ints]
-        return np.array([min(ds) / self.size], dtype=self.dtype)
+        for angle in angles:
+            ray_point = self._agent_location + [
+                2 * self.size * np.cos(self._agent_theta + angle),
+                2 * self.size * np.sin(self._agent_theta + angle),
+            ]
+
+            ints = self.segment_wall_intersections([self._agent_location, ray_point])
+            assert ints
+
+            ds = [
+                np.linalg.norm(np.array(i) - self._agent_location, ord=2) for i in ints
+            ]
+
+            mins.append(min(ds))
+        return np.array([min(mins) / self.size], dtype=self.dtype)
 
     def _get_obs(self):
         """
