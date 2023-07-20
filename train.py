@@ -19,7 +19,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-def init_gym(gym_name, logs_path=None):
+def init_gym(gym_name, logs_path=None, render_mode="rgb_array"):
     # initialise Gym env
     gym.register(
         id=gym_name,
@@ -27,7 +27,7 @@ def init_gym(gym_name, logs_path=None):
         max_episode_steps=3000,
     )
 
-    env = gym.make(gym_name, render_mode="rgb_array")
+    env = gym.make(gym_name, render_mode=render_mode)
     env.reset()
 
     if logs_path:
@@ -39,6 +39,12 @@ def init_gym(gym_name, logs_path=None):
 def init_model(env, net_arch, activation_fnn, learning_rate, logger=None):
     """Initialise the model with given setup,
     TODO: maybe just expose the policy_kwargs as a parameter?"""
+
+    # policy_kwargs = {
+    #     "net_arch": [100, 100],  # Specify the number of hidden units per layer
+    #     "activation_fn": nn.ReLU,  # Specify the activation function
+    # }
+
     n_actions = env.action_space.shape[-1]
     action_noise = NormalActionNoise(
         mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
@@ -151,12 +157,14 @@ def train(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the RL model.")
+    ## TODO: do we really care about the gym name
     parser.add_argument(
         "--gym_name", type=str, default="BeeWorld", help="Gym environment name."
     )
     parser.add_argument(
         "--base_path", type=str, default="drive/MyDrive/neuromatch/", help="Base path."
     )
+    ## TODO: do we need to expose the model algorithm like this?
     parser.add_argument(
         "--model_algo", type=str, default="TD3", help="RL model algorithm."
     )

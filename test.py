@@ -8,15 +8,13 @@ from stable_baselines3 import TD3
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-def retrieve_last_model_saved(base_path="drive/MyDrive/neuromatch/", model_algo="TD3"):
-    models_dir = base_path + "models/"
-    saved_models_path = models_dir + model_algo
-
+def retrieve_latest_model(path):
+    """load the latest model saved during training"""
     max_number = float("-inf")
     max_filename = ""
 
     # Loop over the files in the folder
-    for filename in os.listdir(saved_models_path):
+    for filename in os.listpath(path):
         if filename.endswith(".zip"):
             number = int(filename.split(".")[0])
 
@@ -31,10 +29,10 @@ def test(
     gym_name="BeeWorld",
     base_path="drive/MyDrive/neuromatch/",
     model_algo="TD3",
-    range_max=1000,
+    prediction_steps=1000,
 ):
-    # load the latest model saved during training
-    latest_model_path = retrieve_last_model_saved(base_path, model_algo)
+    models_path = base_path + "models/" + model_algo
+    latest_model_path = retrieve_latest_model(models_path)
 
     loaded_model = TD3.load(latest_model_path)
     loaded_model.set_env(
@@ -44,8 +42,9 @@ def test(
     vec_env = loaded_model.get_env()
     obs = vec_env.reset()
 
+    # TODO: depending on function design, we should save the frames or at least return them? or are they saved automatically?
     frames = []
-    for i in trange(range_max):
+    for i in trange(prediction_steps):
         action, _states = loaded_model.predict(obs)
         obs, rewards, dones, info = vec_env.step(action)
 
@@ -72,7 +71,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # call the test function with the parsed arguments
     test(
         gym_name=args.gym_name,
         base_path=args.base_path,
