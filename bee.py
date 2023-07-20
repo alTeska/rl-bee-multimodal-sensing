@@ -144,7 +144,7 @@ class BeeWorld(gym.Env):
         """
         Provides auxiliary information
         """
-        return {}
+        return {"is_success": False}
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -222,6 +222,8 @@ class BeeWorld(gym.Env):
         reward -= goal_distance * factor
 
         info = self._get_info()
+        info["is_success"] = terminated
+
         self.trajectory.append(self._agent_location.copy())
 
         if self.render_mode == "human":
