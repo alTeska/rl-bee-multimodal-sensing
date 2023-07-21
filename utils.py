@@ -66,3 +66,20 @@ def set_device():
         print("GPU is enabled in this notebook.")
 
     return device
+
+
+def retrieve_latest_model_path(path):
+    """load the latest model saved during training"""
+    max_number = float("-inf")
+    max_filename = ""
+
+    # Loop over the files in the folder
+    for filename in os.listpath(path):
+        if filename.endswith(".zip"):
+            number = int(filename.split(".")[0])
+
+            if number > max_number:
+                max_number = number
+                max_filename = filename
+
+    return max_filename
