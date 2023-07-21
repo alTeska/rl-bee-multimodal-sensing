@@ -78,21 +78,27 @@ def custom_training(config):
         video_path=video_path,
         render_mode=config["env"]["render_mode"],
         max_episode_steps=config["train"]["max_episode_steps"],
+        walls=config["env"]["walls"],
+        goal_size=config["env"]["goal_size"],
     )
-
+    # initialize the environment for evaluation callback
     env_eval = init_gym(
         gym_name="EvaluationGym",
         logs_path=logs_path,
         video_path=None,
         render_mode=config["env"]["render_mode"],
         max_episode_steps=config["train"]["max_episode_steps"],
+        walls=config["env"]["walls"],
+        goal_size=config["env"]["goal_size"],
     )
+
     # Set up logging for training progress
     callback, logger = setup_logging(
         env_eval,
         logs_path,
         output_path,
         max_no_improvement_evals=config["train"]["max_no_improvement_evals"],
+        eval_freq=config["train"]["eval_freq"],
     )
 
     if config["setup"]["continue_training"] and os.path.exists(input_path):

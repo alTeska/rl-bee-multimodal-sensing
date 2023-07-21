@@ -24,9 +24,14 @@ def init_gym(
     max_episode_steps=1000,
     logs_path=None,
     video_path=None,
+    walls=[
+        [(5.0, 0.0), (5.0, 5.0)],
+    ],
+    goal_size=2.0,
 ):
     """
     Initialize the Gym environment with the given setup.
+    For new walls: [(pAx, pAy),(pBx,pBy), (pAx, pAy),(pBx,pBy)]
 
     Parameters:
         gym_name (str): The name of the custom Gym environment to initialize. Defaults to "BeeWorld".
@@ -43,7 +48,12 @@ def init_gym(
         entry_point=BeeWorld,
         max_episode_steps=max_episode_steps,
     )
-    env = gym.make(gym_name, render_mode=render_mode)
+    env = gym.make(
+        gym_name,
+        render_mode=render_mode,
+        walls=walls,
+        goal_size=goal_size,
+    )
 
     if video_path:
         env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
@@ -123,7 +133,12 @@ def load_model(env, path, replay_buffer=None, logger=None):
 
 
 def setup_logging(
-    env, logs_path, best_model_save_path, max_no_improvement_evals=10, min_evals=5
+    env,
+    logs_path,
+    best_model_save_path,
+    max_no_improvement_evals=10,
+    min_evals=5,
+    eval_freq=1000,
 ):
     """
     Set up the logger and early stopping callback for training.
@@ -151,7 +166,7 @@ def setup_logging(
         callback_after_eval=stop_train_callback,
         best_model_save_path=best_model_save_path,
         log_path=logs_path,
-        eval_freq=1000,
+        eval_freq=eval_freq,
         n_eval_episodes=10,
         deterministic=True,
         render=False,
