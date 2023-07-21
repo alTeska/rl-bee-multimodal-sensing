@@ -7,18 +7,15 @@ import gymnasium as gym
 from bee import BeeWorld
 from utils import create_directory
 from stable_baselines3 import TD3
-from stable_baselines3.common.noise import (
-    NormalActionNoise,
-    # OrnsteinUhlenbeckActionNoise
-)
+from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.logger import configure
 from stable_baselines3.common.callbacks import (
     EvalCallback,
     StopTrainingOnNoModelImprovement,
 )
-from stable_baselines3.common.logger import configure
+from gymnasium.wrappers.record_video import RecordVideo
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
-from gymnasium.wrappers.record_video import RecordVideo
 
 
 def init_gym(
@@ -28,7 +25,19 @@ def init_gym(
     logs_path=None,
     video_path=None,
 ):
-    """Initialise the gym environment with given setup"""
+    """
+    Initialize the Gym environment with the given setup.
+
+    Parameters:
+        gym_name (str): The name of the custom Gym environment to initialize. Defaults to "BeeWorld".
+        render_mode (str): The rendering mode for the environment. Defaults to "rgb_array".
+        max_episode_steps (int): The maximum number of steps per episode. Defaults to 1000.
+        logs_path (str or None): The directory path to store logs. If None, no logging is performed. Defaults to None.
+        video_path (str or None): The directory path to save video recordings. If None, no videos are recorded. Defaults to None.
+
+    Returns:
+        gym.Env: The initialized Gym environment.
+    """
     gym.register(
         id=gym_name,
         entry_point=BeeWorld,
@@ -56,7 +65,18 @@ def init_model(
     learning_rate=0.01,
     logger=None,
 ):
-    """Initialise the model with given setup"""
+    """
+    Initialize the TD3 model with the given setup.
+
+    Parameters:
+        env (gym.Env): The Gym environment to be used for training.
+        policy_kwargs (dict): Dictionary containing the policy configuration. Defaults to a two-layer MLP policy.
+        learning_rate (float): The learning rate for the optimizer. Defaults to 0.01.
+        logger (stable_baselines3.common.logger.Logger or None): The logger to be used for logging training progress. Defaults to None.
+
+    Returns:
+        stable_baselines3.TD3: The initialized TD3 model.
+    """
     n_actions = env.action_space.shape[-1]
     action_noise = NormalActionNoise(
         mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions)
@@ -78,7 +98,18 @@ def init_model(
 
 
 def load_model(env, path, replay_buffer=None, logger=None):
-    # load model
+    """
+    Load a pre-trained TD3 model.
+
+    Parameters:
+        env (gym.Env): The Gym environment to be used for loading the model.
+        path (str): The path to the directory containing the saved model.
+        replay_buffer (stable_baselines3.common.buffers.ReplayBuffer or None): The replay buffer to load into the model. Defaults to None.
+        logger (stable_baselines3.common.logger.Logger or None): The logger to be used for logging training progress. Defaults to None.
+
+    Returns:
+        stable_baselines3.TD3: The loaded TD3 model.
+    """
     model = TD3.load(os.path.join(path, "best_model"))
     model.set_env(DummyVecEnv([lambda: env]))
 
@@ -94,13 +125,27 @@ def load_model(env, path, replay_buffer=None, logger=None):
 def setup_logging(
     env, logs_path, best_model_save_path, max_no_improvement_evals=10, min_evals=5
 ):
+    """
+    Set up the logger and early stopping callback for training.
+
+    Parameters:
+        env (gym.Env): The Gym environment to be used for evaluation.
+        logs_path (str): The directory path to store logs and evaluation results.
+        best_model_save_path (str): The directory path to save the best model checkpoint.
+        max_no_improvement_evals (int): Maximum number of evaluations without improvement before early stopping. Defaults to 10.
+        min_evals (int): Minimum number of evaluations before early stopping can occur. Defaults to 5.
+
+    Returns:
+        tuple: A tuple containing the evaluation callback and logger.
+            EvalCallback: The evaluation callback for the training process.
+            stable_baselines3.common.logger.Logger: The logger used for logging training progress.
+    """
     logger = configure(logs_path, ["stdout", "csv", "log", "tensorboard", "json"])
     stop_train_callback = StopTrainingOnNoModelImprovement(
         max_no_improvement_evals=max_no_improvement_evals,
         min_evals=min_evals,
         verbose=1,
     )
-    """Set up the logger and early stopping callback"""
     eval_callback = EvalCallback(
         env,
         callback_after_eval=stop_train_callback,

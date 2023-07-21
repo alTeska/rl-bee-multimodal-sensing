@@ -8,25 +8,44 @@ from IPython.display import HTML
 
 
 def create_directory(path):
-    # Create directories for trained model and log saving
+    """
+    Create a directory at the given path if it does not already exist.
+
+    Parameters:
+        path (str): The directory path to create.
+
+    Returns:
+        None
+    """
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
 
 
 def save_config(config, output_path):
+    """
+    Save the configuration dictionary to a YAML file.
+
+    Parameters:
+        config (dict): The configuration dictionary to save.
+        output_path (str): The path to the output directory where the config file will be saved.
+
+    Returns:
+        None
+    """
     with open(os.path.join(output_path, "config.yaml"), "w") as outfile:
         yaml.dump(config, outfile, default_flow_style=False)
 
 
 def display_video(frames, framerate=30):
-    """Generates video from `frames`.
+    """
+    Generate a video from a sequence of frames and display it.
 
-    Args:
-      frames (ndarray): Array of shape (n_frames, height, width, 3).
-      framerate (int): Frame rate in units of Hz.
+    Parameters:
+        frames (ndarray): Array of shape (n_frames, height, width, 3).
+        framerate (int): Frame rate in units of Hz. Defaults to 30.
 
     Returns:
-      Display object.
+        IPython.display.DisplayObject: The display object containing the video.
     """
     height, width, _ = frames[0].shape
     dpi = 70
@@ -52,14 +71,10 @@ def display_video(frames, framerate=30):
 
 def set_device():
     """
-    Set the device. CUDA if available, CPU otherwise
-    Inform the user if the notebook uses GPU or CPU.
-
-    Args:
-      None
+    Set the device to CUDA if available, otherwise to CPU.
 
     Returns:
-      Nothing
+        str: The device name (e.g., "cuda" or "cpu").
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device != "cuda":
@@ -75,12 +90,20 @@ def set_device():
 
 
 def retrieve_latest_model_path(path):
-    """load the latest model saved during training"""
+    """
+    Retrieve the path of the latest model saved during training.
+
+    Parameters:
+        path (str): The directory path to search for the model files.
+
+    Returns:
+        str: The path of the latest model file (ending with ".zip").
+    """
     max_number = float("-inf")
     max_filename = ""
 
     # Loop over the files in the folder
-    for filename in os.listpath(path):
+    for filename in os.listdir(path):
         if filename.endswith(".zip"):
             number = int(filename.split(".")[0])
 

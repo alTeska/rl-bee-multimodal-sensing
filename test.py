@@ -11,15 +11,30 @@ def render_prediction(
     model,
     prediction_steps=1000,
 ):
-    """Load the existing model and generate the prediction frames"""
+    """
+    Generate prediction frames using a trained RL model.
+
+    This function uses the given RL model to predict actions for a given number of steps and
+    generates frames for each step by rendering the environment. It returns a list of frames.
+
+    Parameters:
+        model (stable_baselines3.TD3): The trained RL model.
+        prediction_steps (int, optional): The number of steps to generate predictions and frames.
+                                          Defaults to 1000.
+
+    Returns:
+        list: A list of rendered frames from the environment during prediction.
+    """
     vec_env = model.get_env()
     obs = vec_env.reset()
 
     frames = []
     for i in trange(prediction_steps):
+        # Predict the action based on the observation; Perform the action in the environment
         action, _states = model.predict(obs)
         obs, rewards, dones, info = vec_env.step(action)
 
+        # Render the environment and add the frame to the frames list
         frames.append(vec_env.render())
 
     return frames
@@ -40,7 +55,7 @@ if __name__ == "__main__":
 
     output_path = os.path.join(config["setup"]["path"], config["setup"]["alias"])
 
-    # load model
+    # Load the model and generate prediction frames
     env = init_gym(
         gym_name=config["env"]["gym_name"],
         render_mode=config["env"]["render_mode"],
