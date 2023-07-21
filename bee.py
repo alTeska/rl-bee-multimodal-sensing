@@ -88,6 +88,10 @@ class BeeWorld(gym.Env):
         render_mode="human",
         max_episode_steps=1000,
         goal_size=2.0,
+        walls=[
+            [(5.0, 0.0), (5.0, 5.0)],
+            # [(2.0, 5.0), (8.0, 5.0)],
+        ],
     ):
         self.dtype = "float32"
         self.render_mode = render_mode
@@ -113,9 +117,7 @@ class BeeWorld(gym.Env):
             [(0.0, 0.0), (self.size, 0.0)],
             [(0.0, self.size), (self.size, self.size)],
             [(self.size, 0.0), (self.size, self.size)],
-            [(self.size / 2, 0.0), (self.size / 2, 5.0)],
-            # [(2.0, self.size / 2), (8.0, self.size / 2)],
-        ]
+        ] + walls
 
         self.observation_space = spaces.Dict(
             {
