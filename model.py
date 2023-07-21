@@ -45,11 +45,11 @@ def init_gym(
     )
     env = gym.make(gym_name, render_mode=render_mode)
 
+    if video_path:
+        env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
+
     if logs_path:
         env = Monitor(env, logs_path, allow_early_resets=True)
-
-    if video_path:
-        env = RecordVideo(env, video_path, lambda x: x % 10 == 0)
 
     env.reset()
 
