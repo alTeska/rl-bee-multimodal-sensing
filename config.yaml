@@ -1,11 +1,14 @@
 setup:
   path: models/bee-world/
-  gym_name: BeeWorld
-  algorithm: TD3
   alias: round1
 
   continue_training: False
   old_alias: round1
+
+env:
+  algorithm: TD3
+  gym_name: BeeWorld
+  render_mode: rgb_array
 
 train: 
   timesteps: 10000
@@ -17,4 +20,5 @@ train:
 test:
   prediction_steps: 1000
   video: True
+
 

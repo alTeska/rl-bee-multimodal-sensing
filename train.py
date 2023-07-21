@@ -53,14 +53,12 @@ def custom_training(config):
             nn, config["train"]["policy_kwargs"]["activation_fn"]
         )
     base_path = config["setup"]["path"]
-    gym_name = config["setup"]["gym_name"]
+    gym_name = config["env"]["gym_name"]
     policy_kwargs = config["train"]["policy_kwargs"]
     learning_rate = config["train"]["learning_rate"]
 
-    alias = config["setup"]["alias"]
-    old_alias = config["setup"]["old_alias"]
-    input_path = os.path.join(base_path, old_alias)
-    output_path = os.path.join(base_path, alias)
+    input_path = os.path.join(base_path, config["setup"]["old_alias"])
+    output_path = os.path.join(base_path, config["setup"]["alias"])
 
     if config["setup"]["continue_training"] and os.path.exists(input_path):
         print("Loading existing model")

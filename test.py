@@ -44,8 +44,8 @@ if __name__ == "__main__":
 
     # load model
     env = init_gym(
-        config["setup"]["gym_name"],
-        render_mode="human",
+        env=config["env"]["gym_name"],
+        render_mode=config["env"]["render_mode"],
         video_path=os.path.join(output_path, "video"),
     )
     model = load_model(env, output_path, replay_buffer=None, logger=None)
