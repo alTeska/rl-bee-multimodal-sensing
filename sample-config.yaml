@@ -1,0 +1,16 @@
+setup:
+  path: model/bee-world-2/
+  gym_name: BeeWorld
+  algorithm: TD3
+  continue-training: False
+  alias: None
+
+train: 
+  timesteps: 10000
+  iter_max: 10
+  policy_kwargs: {net_arch: [100 ,100], activation_fn: ReLU}
+  learning_rate: 0.001
+
+test:
+  prediction_step: 1000
+
