@@ -80,9 +80,16 @@ def custom_training(config):
         max_episode_steps=config["train"]["max_episode_steps"],
     )
 
+    env_eval = init_gym(
+        gym_name="EvaluationGym",
+        logs_path=logs_path,
+        video_path=None,
+        render_mode=config["env"]["render_mode"],
+        max_episode_steps=config["train"]["max_episode_steps"],
+    )
     # Set up logging for training progress
     callback, logger = setup_logging(
-        env,
+        env_eval,
         logs_path,
         output_path,
         max_no_improvement_evals=config["train"]["max_no_improvement_evals"],
