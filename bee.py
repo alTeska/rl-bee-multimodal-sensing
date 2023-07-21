@@ -5,7 +5,9 @@ from pygame.locals import *
 from gymnasium import spaces
 
 
-def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
+def cone_locations(
+    agent_location, agent_theta, cone_phi, scale_factor
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the positions of two points forming a  vision cone around the agent for the visualization
 
     Args:
@@ -37,13 +39,60 @@ def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
     return point_left, point_right
 
 
+def intersect_segments(sA, sB) -> tuple[float, float]:
+    """Return an intersection point for two line segments
+    https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection?useskin=vector#Given_two_points_on_each_line_segment
+
+    Args:
+        sA: segment A
+        sB: segment B
+    """
+    pA1, pA2 = sA
+    pB1, pB2 = sB
+
+    x1, y1 = pA1
+    x2, y2 = pA2
+    x3, y3 = pB1
+    x4, y4 = pB2
+
+    div = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+    if div == 0:
+        return (None, None)
+
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / (div)
+    u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / (div)
+
+    if (t < 0.0) or (t > 1.0):
+        return (None, None)
+
+    if (u < 0.0) or (u > 1.0):
+        return (None, None)
+
+    px = x1 + t * (x2 - x1)
+    py = y1 + t * (y2 - y1)
+
+    return (px, py)
+
+
 class BeeWorld(gym.Env):
     metadata = {
         "render_modes": ["human", "rgb_array"],
         "render_fps": 60,
     }
 
-    def __init__(self, size=10, dt=0.1, render_mode="human", max_episode_steps=1000):
+    def __init__(
+        self,
+        size=10,
+        dt=0.1,
+        render_mode="human",
+        max_episode_steps=1000,
+        goal_size=2.0,
+        walls=[
+            [(5.0, 0.0), (5.0, 5.0)],
+            # [(2.0, 5.0), (8.0, 5.0)],
+        ],
+    ):
         self.dtype = "float32"
         self.render_mode = render_mode
         self.max_episode_steps = max_episode_steps
@@ -61,12 +110,14 @@ class BeeWorld(gym.Env):
 
         self.cone_phi = np.pi / 8  # Vision cone angle
 
+        self.goal_size = goal_size
+
         self.walls = [
-            (0, 0),
-            (self.size, 0),
-            (0, self.size),
-            (self.size, self.size),
-        ]
+            [(0.0, 0.0), (0.0, self.size)],
+            [(0.0, 0.0), (self.size, 0.0)],
+            [(0.0, self.size), (self.size, self.size)],
+            [(self.size, 0.0), (self.size, self.size)],
+        ] + walls
 
         self.observation_space = spaces.Dict(
             {
@@ -78,6 +129,7 @@ class BeeWorld(gym.Env):
                     high=1,
                     dtype=self.dtype,
                 ),
+                "wall": spaces.Box(0, 1, dtype=self.dtype),
             }
         )
 
@@ -92,25 +144,32 @@ class BeeWorld(gym.Env):
         self.screen: pygame.Surface = None
         self.clock = None
         self.screen_size = (400, 400)
+        self.font = None
 
         self.trajectory = []
 
-    def _check_vision(self):
+        self.obs = None
+
+    def _check_vision(self) -> int:
         """
         Returns 1 if the bee can see the goal and 0 otherwise
-        TODO: add walls
         """
         ray = self._target_location - self._agent_location  # raycast from agent to goal
-        ang = (np.arctan2(ray[0], ray[1])) % (2 * np.pi)  # angle of raycast
+        ang = (np.arctan2(ray[1], ray[0])) % (2 * np.pi)  # angle of raycast
 
         diff = np.abs(ang - self._agent_theta)
 
-        if (diff < self.cone_phi) or ((2 * np.pi - diff) < self.cone_phi):
-            return 1
+        if (diff > self.cone_phi) and ((2 * np.pi - diff) > self.cone_phi):
+            return 0
 
-        return 0
+        if self.segment_wall_intersections(
+            [self._agent_location, self._target_location]
+        ):
+            return 0
 
-    def _get_smell(self):
+        return 1
+
+    def _get_smell(self) -> np.ndarray:
         """
         Returns strength of smell at agent's current location
         """
@@ -123,11 +182,44 @@ class BeeWorld(gym.Env):
             dtype=self.dtype,
         )
 
-    def _get_time(self):
+    def _get_time(self) -> np.ndarray:
+        """
+        Returns the current timestep scaled between 0 and 1
+        """
         self.steps += 1
         return np.array([self.steps / self.max_episode_steps], dtype=self.dtype)
 
-    def _get_obs(self):
+    def _get_visible_wall(self, n_casts=7) -> np.ndarray:
+        """Returns the distance to the closest wall in the agents cone of vision
+        Uses raycasts equally spaced inside the vision cone
+
+        Args:
+            n_casts (int, optional): number of raycasts. Defaults to 7.
+
+        Returns:
+            np.ndarray: distance to the closest wall
+        """
+        mins = []
+
+        angles = np.linspace(-self.cone_phi, self.cone_phi, n_casts)
+
+        for angle in angles:
+            ray_point = self._agent_location + [
+                2 * self.size * np.cos(self._agent_theta + angle),
+                2 * self.size * np.sin(self._agent_theta + angle),
+            ]
+
+            ints = self.segment_wall_intersections([self._agent_location, ray_point])
+            assert ints
+
+            ds = [
+                np.linalg.norm(np.array(i) - self._agent_location, ord=2) for i in ints
+            ]
+
+            mins.append(min(ds))
+        return np.array([min(mins) / self.size], dtype=self.dtype)
+
+    def _get_obs(self) -> dict:
         """
         Returns a dictionary with agent's current observations
         """
@@ -138,15 +230,49 @@ class BeeWorld(gym.Env):
                 [self._agent_vel, self._agent_ang_vel], dtype=self.dtype
             ),
             "time": self._get_time(),
+            "wall": self._get_visible_wall(),
         }
 
-    def _get_info(self):
+    def _get_info(self) -> dict:
         """
         Provides auxiliary information
         """
         return {"is_success": False}
 
-    def reset(self, seed=None, options=None):
+    def _check_goal_intersections(self) -> bool:
+        """Check for intersections between the goal and walls
+
+        Returns:
+            bool: intersection exists
+        """
+        for wall in self.walls:
+            # if one of the endpoints of a wall is in the goal they intersect
+            if np.linalg.norm(self._target_location - wall[0], ord=2) < self.goal_size:
+                return True
+            if np.linalg.norm(self._target_location - wall[1], ord=2) < self.goal_size:
+                return True
+
+            wall_vector = np.array(wall[1]) - wall[0]
+            target_vector = self._target_location - wall[0]
+            a = np.linalg.norm(target_vector, ord=2)
+            c = np.linalg.norm(wall_vector, ord=2)
+
+            # project a vector between one endpoint and the goal center on the wall
+            projection = np.dot(target_vector, wall_vector) / c
+
+            # if the projection is negative or larger than the wall there are no intersections
+            if (projection > c) or (projection < 0):
+                continue
+
+            dist = np.sqrt(a**2 - projection**2)
+
+            # check the distance beween the goal and the wall segment
+            if dist < self.goal_size:
+                return True
+
+        return False
+
+    def reset(self, seed=None, options=None) -> tuple[dict, dict]:
         super().reset(seed=seed)
 
         self.steps = 0
@@ -161,9 +287,11 @@ class BeeWorld(gym.Env):
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = self.np_random.random(size=2, dtype=self.dtype) * (
-                self.size - 4
-            ) + [2.0, 2.0]
+            self._target_location = (
+                self.np_random.random(size=2, dtype=self.dtype) * self.size
+            )
+            if self._check_goal_intersections():
+                self._target_location = self._agent_location
 
         # location close to the target
         # self._target_location = self._agent_location + (
@@ -173,6 +301,8 @@ class BeeWorld(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
+        self.obs = observation
+
         self.trajectory = []  # Reset trajectory
 
         if self.render_mode == "human":
@@ -180,15 +310,40 @@ class BeeWorld(gym.Env):
 
         return observation, info
 
-    def step(self, action):
+    def segment_wall_intersections(self, seg) -> list:
+        """Check whether a segment intesects with any walls
+
+        Args:
+            seg: line segment
+
+        Returns:
+            list: list of intersection points
         """
-        Returns (observation, reward, done, info)
+        p = []
+
+        for wall in self.walls:
+            point = intersect_segments(seg, wall)
+            if point[0] is not None:
+                p.append(point)
+
+        return p
+
+    def step(self, action) -> tuple[dict, float, bool, bool, dict]:
+        """Performs a step based on the action.
+        Performs movement integration, calculates rewards
+
+        Args:
+            action (np.ndarray): action to take
+
+        Returns:
+            tuple[dict, float, bool, bool, dict]: tuple of (observation, reward, terminated, done, info)
         """
+        reward = 0
 
         old_agent_location = self._agent_location.copy()
 
         self._agent_vel += self.dt * action[0] * self.linear_acceleration_range
-        self._agent_vel = np.clip(self._agent_vel, -1, 1)
+        self._agent_vel = np.clip(self._agent_vel, 0, 1)
 
         self._agent_ang_vel += self.dt * action[1] * self.angular_acceleration_range
         self._agent_ang_vel = np.clip(self._agent_ang_vel, -0.3, 0.3)
@@ -201,20 +356,24 @@ class BeeWorld(gym.Env):
             self.dt * self._agent_vel * np.sin(self._agent_theta),
         ]
 
-        # Check if the agent is outside the valid range
-        if any(self._agent_location < 0) or any(self._agent_location > self.size):
+        if wall_intersections := self.segment_wall_intersections(
+            [old_agent_location, self._agent_location]
+        ):
             self._agent_location = old_agent_location
+            self._agent_vel = 0
+            reward -= 100
 
         goal_distance = np.linalg.norm(
             self._target_location - self._agent_location, ord=2
         )
 
-        terminated = goal_distance < 2
+        terminated = goal_distance < self.goal_size
         observation = self._get_obs()
+        self.obs = observation
 
         factor = 0.01
         # Rewards
-        reward = 1000 if terminated else 0  # Binary sparse rewards
+        reward += 1000 if terminated else 0  # Binary sparse rewards
         # reward += observation["smell"][0]
         # reward += observation["vision"]
         # reward += observation["time"]  # time passed
@@ -245,6 +404,7 @@ class BeeWorld(gym.Env):
             pygame.init()
             self.screen = pygame.display.set_mode(self.screen_size)
             pygame.display.set_caption("BeeWorld")
+            self.font = pygame.font.SysFont("monospace", 10)
 
         self.clock = pygame.time.Clock()
 
@@ -266,7 +426,10 @@ class BeeWorld(gym.Env):
 
         pygame.draw.circle(self.surf, (255, 0, 0), agent_pos.astype(int), 5)
         pygame.draw.circle(
-            self.surf, (0, 255, 0), target_pos.astype(int), 2 * scale_factor
+            self.surf,
+            (0, 255, 0),
+            target_pos.astype(int),
+            self.goal_size * scale_factor,
         )
 
         if len(self.trajectory) > 1:
@@ -298,9 +461,34 @@ class BeeWorld(gym.Env):
             2,
         )
 
+        for wall in self.walls:
+            pygame.draw.lines(
+                self.surf,
+                (0, 0, 0),
+                False,
+                [
+                    (
+                        np.array(wall[0]) * scale_factor
+                        + np.array([screen_offset_x, screen_offset_y])
+                    ).astype(int),
+                    (
+                        np.array(wall[1]) * scale_factor
+                        + np.array([screen_offset_x, screen_offset_y])
+                    ).astype(int),
+                ],
+            )
+
         if self.render_mode == "human":
             assert self.screen is not None
+
+            label = self.font.render(
+                f"vision: {self.obs['vision']}; smell: {self.obs['smell'][0]:.4f}; wall: {self.obs['wall'][0]:.4f}",
+                1,
+                (0, 0, 0),
+            )
             self.screen.blit(self.surf, (0, 0))
+            self.screen.blit(label, (0, 5))
+
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
         elif self.render_mode == "rgb_array":
@@ -308,7 +496,7 @@ class BeeWorld(gym.Env):
                 np.array(pygame.surfarray.pixels3d(self.surf)), axes=(1, 0, 2)
             )
 
-    def close(self):
+    def close(self) -> None:
         """
         Clean up the environment
         """
