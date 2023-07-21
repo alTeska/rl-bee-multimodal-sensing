@@ -64,15 +64,18 @@ def custom_training(config):
 
     # Create directories for logs and videos
     logs_path = os.path.join(output_path, "logs")
-    video_path = os.path.join(output_path, "video")
     create_directory(logs_path)
-    create_directory(video_path)
+
+    video_path = None
+    if config["env"]["video"]:
+        video_path = os.path.join(output_path, "video")
+        create_directory(video_path)
 
     # Initialize the Gym environment for training
     env = init_gym(
         gym_name=config["env"]["gym_name"],
         logs_path=logs_path,
-        video_path=None,
+        video_path=video_path,
         render_mode=config["env"]["render_mode"],
         max_episode_steps=config["train"]["max_episode_steps"],
     )
