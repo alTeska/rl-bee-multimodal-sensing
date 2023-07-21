@@ -144,8 +144,11 @@ class BeeWorld(gym.Env):
         self.screen: pygame.Surface = None
         self.clock = None
         self.screen_size = (400, 400)
+        self.font = None
 
         self.trajectory = []
+
+        self.obs = None
 
     def _check_vision(self) -> int:
         """
@@ -298,6 +301,8 @@ class BeeWorld(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
+        self.obs = observation
+
         self.trajectory = []  # Reset trajectory
 
         if self.render_mode == "human":
@@ -364,6 +369,7 @@ class BeeWorld(gym.Env):
 
         terminated = goal_distance < self.goal_size
         observation = self._get_obs()
+        self.obs = observation
 
         factor = 0.01
         # Rewards
@@ -389,7 +395,7 @@ class BeeWorld(gym.Env):
 
         return observation, reward, terminated, terminated, info
 
-    def render(self, scale=0.9) -> None:
+    def render(self, scale=0.9):
         """
         Renders the current state of the environment using Pygame.
         The screen is scaled Calculate the 90% screen size, the positions are also transformed based on the scale factor.
@@ -398,6 +404,7 @@ class BeeWorld(gym.Env):
             pygame.init()
             self.screen = pygame.display.set_mode(self.screen_size)
             pygame.display.set_caption("BeeWorld")
+            self.font = pygame.font.SysFont("monospace", 10)
 
         self.clock = pygame.time.Clock()
 
@@ -473,7 +480,15 @@ class BeeWorld(gym.Env):
 
         if self.render_mode == "human":
             assert self.screen is not None
+
+            label = self.font.render(
+                f"vision: {self.obs['vision']}; smell: {self.obs['smell'][0]:.4f}; wall: {self.obs['wall'][0]:.4f}",
+                1,
+                (0, 0, 0),
+            )
             self.screen.blit(self.surf, (0, 0))
+            self.screen.blit(label, (0, 5))
+
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()
         elif self.render_mode == "rgb_array":
