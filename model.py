@@ -22,7 +22,7 @@ from gymnasium.wrappers.record_video import RecordVideo
 
 
 def init_gym(
-    gym_name,
+    gym_name="BeeWorld",
     render_mode="rgb_array",
     max_episode_steps=1000,
     logs_path=None,
@@ -82,7 +82,6 @@ def load_model(env, path, replay_buffer=None, logger=None):
     model = TD3.load(os.path.join(path, "best_model"))
     model.set_env(DummyVecEnv([lambda: env]))
 
-    # env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
     if replay_buffer:
         model.load_replay_buffer(replay_buffer)
 
@@ -92,10 +91,14 @@ def load_model(env, path, replay_buffer=None, logger=None):
     return model
 
 
-def setup_logging(env, logs_path, best_model_save_path):
+def setup_logging(
+    env, logs_path, best_model_save_path, max_no_improvement_evals=10, min_evals=5
+):
     logger = configure(logs_path, ["stdout", "csv", "log", "tensorboard", "json"])
     stop_train_callback = StopTrainingOnNoModelImprovement(
-        max_no_improvement_evals=3, min_evals=5, verbose=1
+        max_no_improvement_evals=max_no_improvement_evals,
+        min_evals=min_evals,
+        verbose=1,
     )
     """Set up the logger and early stopping callback"""
     eval_callback = EvalCallback(

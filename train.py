@@ -3,48 +3,9 @@ import yaml
 import argparse
 import numpy as np
 import torch.nn as nn
-from utils import create_directory
+from utils import create_directory, save_config
 from model import init_gym, init_model, load_model, setup_logging
 from stable_baselines3 import TD3
-
-
-def new_model(
-    output_path,
-    gym_name,
-    policy_kwargs,
-    learning_rate,
-):
-    logs_path = os.path.join(output_path, "logs")
-    video_path = os.path.join(output_path, "video")
-    replay_buffer_path = os.path.join(output_path, "replay_buffer")
-    create_directory(logs_path)
-
-    env = init_gym(gym_name, logs_path=logs_path, video_path=video_path)
-    callback, logger = setup_logging(env, logs_path, output_path)
-    model = init_model(env, policy_kwargs, learning_rate, logger=logger)
-
-    return model, callback
-
-
-def load_existing_model(
-    input_path,
-    output_path,
-    gym_name,
-    policy_kwargs,
-    learning_rate,
-):
-    logs_path = os.path.join(output_path, "logs")
-    video_path = os.path.join(output_path, "video")
-
-    replay_buffer_path = os.path.join(input_path, "replay_buffer")
-    create_directory(output_path)
-    create_directory(logs_path)
-
-    env = init_gym(gym_name, logs_path=logs_path, video_path=video_path)
-    callback, logger = setup_logging(env, logs_path, output_path)
-    model = load_model(env, path, replay_buffer=replay_buffer_path, logger=logger)
-
-    return model, callback
 
 
 def custom_training(config):
@@ -52,33 +13,39 @@ def custom_training(config):
         config["train"]["policy_kwargs"]["activation_fn"] = getattr(
             nn, config["train"]["policy_kwargs"]["activation_fn"]
         )
-    base_path = config["setup"]["path"]
-    gym_name = config["env"]["gym_name"]
-    policy_kwargs = config["train"]["policy_kwargs"]
-    learning_rate = config["train"]["learning_rate"]
 
+    base_path = config["setup"]["path"]
     input_path = os.path.join(base_path, config["setup"]["old_alias"])
     output_path = os.path.join(base_path, config["setup"]["alias"])
+
+    logs_path = os.path.join(output_path, "logs")
+    video_path = os.path.join(output_path, "video")
+    create_directory(logs_path)
+    create_directory(video_path)
+
+    env = init_gym(
+        gym_name=config["env"]["gym_name"],
+        logs_path=logs_path,
+        video_path=None,
+        render_mode=config["env"]["render_mode"],
+    )
+
+    callback, logger = setup_logging(env, logs_path, output_path)
 
     if config["setup"]["continue_training"] and os.path.exists(input_path):
         print("Loading existing model")
 
-        model, callback = load_existing_model(
-            input_path,
-            output_path,
-            gym_name,
-            policy_kwargs,
-            learning_rate,
-        )
+        replay_buffer_path = os.path.join(input_path, "replay_buffer")
+        model = load_model(env, path, replay_buffer=replay_buffer_path, logger=logger)
 
     else:
         print("Creating a new model")
 
-        model, callback = new_model(
-            output_path,
-            gym_name,
-            policy_kwargs,
-            learning_rate,
+        model = init_model(
+            env=env,
+            policy_kwargs=config["train"]["policy_kwargs"],
+            learning_rate=config["train"]["learning_rate"],
+            logger=logger,
         )
 
     model.learn(
@@ -87,12 +54,10 @@ def custom_training(config):
         callback=callback,
     )
 
+    # Save replay bugger and config
     model.save_replay_buffer(os.path.join(output_path, "replay_buffer"))
+    save_config(config, output_path)
 
-    with open(os.path.join(output_path, "config.yaml"), "w") as outfile:
-        yaml.dump(config, outfile, default_flow_style=False)
-
-    env = model.get_env()
     env.close()
 
 

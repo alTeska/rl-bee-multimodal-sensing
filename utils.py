@@ -1,4 +1,5 @@
 import os
+import yaml
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
@@ -10,6 +11,11 @@ def create_directory(path):
     # Create directories for trained model and log saving
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
+
+
+def save_config(config, output_path):
+    with open(os.path.join(output_path, "config.yaml"), "w") as outfile:
+        yaml.dump(config, outfile, default_flow_style=False)
 
 
 def display_video(frames, framerate=30):

@@ -38,15 +38,15 @@ if __name__ == "__main__":
     with open(args.config_path, "r") as file:
         config = yaml.safe_load(file)
 
-    alias = config["setup"]["alias"]
-
-    output_path = os.path.join(config["setup"]["path"], alias)
+    output_path = os.path.join(config["setup"]["path"], config["setup"]["alias"])
 
     # load model
     env = init_gym(
-        env=config["env"]["gym_name"],
+        gym_name=config["env"]["gym_name"],
         render_mode=config["env"]["render_mode"],
         video_path=os.path.join(output_path, "video"),
+        logs_path=None,
     )
+
     model = load_model(env, output_path, replay_buffer=None, logger=None)
     frames = render_prediction(model, config["test"]["prediction_steps"])
