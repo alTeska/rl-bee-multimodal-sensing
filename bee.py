@@ -155,7 +155,7 @@ class BeeWorld(gym.Env):
         Returns 1 if the bee can see the goal and 0 otherwise
         """
         ray = self._target_location - self._agent_location  # raycast from agent to goal
-        ang = (np.arctan2(ray[0], ray[1])) % (2 * np.pi)  # angle of raycast
+        ang = (np.arctan2(ray[1], ray[0])) % (2 * np.pi)  # angle of raycast
 
         diff = np.abs(ang - self._agent_theta)
 
