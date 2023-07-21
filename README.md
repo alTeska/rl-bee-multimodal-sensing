@@ -9,11 +9,14 @@ This repository contains Python scripts and utilities for training a custom Rein
 
 The repository contains the following files:
 
+0. `bee.py`: Environment (gym) setup - agents action, rewards and space definition for the RL model.
 1. `train_model.py`: The main script to train the RL model.
 2. `render_model.py`: A script to generate and display a video of the RL model's predictions.
 3. `config.yaml`: The configuration file for training the RL model.
 4. `model.py`: A Python module containing utility functions for initializing and loading the RL model.
 5. `utils.py`: A Python module containing utility functions for creating directories, saving the configuration, and more.
+6. `gym_run.py`: Demonstration file for testing gym changes
+
 
 ## Usage
 
