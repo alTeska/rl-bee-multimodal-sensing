@@ -1,5 +1,5 @@
 setup:
-  path: models/bee-world/
+  path: models/bee-world-1000/
   alias: round1
 
   continue_training: False
@@ -9,13 +9,20 @@ env:
   algorithm: TD3
   gym_name: BeeWorld
   render_mode: rgb_array
+  walls: [
+        [[5.0, 0.0], [5.0, 5.0]],
+    ]
+  goal_size: 1.0
   video: True
 
 train: 
   timesteps: 500_000
-  max_episode_steps: 3000
+  max_episode_steps: 1000
   policy_kwargs: { net_arch: [200, 100], activation_fn: ReLU }
   learning_rate: 0.001
+  max_no_improvement_evals: 100
+  eval_freq: 1000
+
 
 test:
   prediction_steps: 1000

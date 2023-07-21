@@ -61,6 +61,8 @@ if __name__ == "__main__":
         render_mode=config["env"]["render_mode"],
         video_path=os.path.join(output_path, "video"),
         logs_path=None,
+        walls=config["env"]["walls"],
+        goal_size=config["env"]["goal_size"],
     )
 
     model = load_model(env, output_path, replay_buffer=None, logger=None)

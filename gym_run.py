@@ -3,8 +3,15 @@ import torch.nn as nn
 from model import init_gym, init_model
 
 
-env = init_gym("BeeWorld", logs_path="test_logs/", render_mode="human")
-# env.metadata["render_fps"] = 6
+env = init_gym(
+    "BeeWorld",
+    logs_path="test_logs/",
+    render_mode="human",
+    walls=[
+        [[5.0, 0.0], [5.0, 5.0]],
+    ],
+    goal_size=2.0,
+)
 
 model = init_model(
     env, policy_kwargs={"net_arch": [100, 100], "activation_fn": nn.ReLU}
