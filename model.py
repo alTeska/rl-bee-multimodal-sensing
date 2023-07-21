@@ -18,6 +18,7 @@ from stable_baselines3.common.callbacks import (
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+from gymnasium.wrappers.record_video import RecordVideo
 
 
 def init_gym(
@@ -25,6 +26,7 @@ def init_gym(
     render_mode="rgb_array",
     max_episode_steps=1000,
     logs_path=None,
+    video_path=None,
 ):
     """Initialise the gym environment with given setup"""
     gym.register(
@@ -36,6 +38,10 @@ def init_gym(
 
     if logs_path:
         env = Monitor(env, logs_path, allow_early_resets=True)
+
+    if video_path:
+        env = RecordVideo(env, video_path, lambda x: x % 10 == 0)
+
     env.reset()
 
     return env

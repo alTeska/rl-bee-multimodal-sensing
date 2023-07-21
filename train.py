@@ -15,10 +15,11 @@ def new_model(
     learning_rate,
 ):
     logs_path = os.path.join(output_path, "logs")
+    video_path = os.path.join(output_path, "video")
     replay_buffer_path = os.path.join(output_path, "replay_buffer")
     create_directory(logs_path)
 
-    env = init_gym(gym_name, logs_path=logs_path)
+    env = init_gym(gym_name, logs_path=logs_path, video_path=video_path)
     callback, logger = setup_logging(env, logs_path, output_path)
     model = init_model(env, policy_kwargs, learning_rate, logger=logger)
 
@@ -33,11 +34,13 @@ def load_existing_model(
     learning_rate,
 ):
     logs_path = os.path.join(output_path, "logs")
+    video_path = os.path.join(output_path, "video")
+
     replay_buffer_path = os.path.join(input_path, "replay_buffer")
     create_directory(output_path)
     create_directory(logs_path)
 
-    env = init_gym(gym_name, logs_path=logs_path)
+    env = init_gym(gym_name, logs_path=logs_path, video_path=video_path)
     callback, logger = setup_logging(env, logs_path, output_path)
     model = load_model(env, path, replay_buffer=replay_buffer_path, logger=logger)
 

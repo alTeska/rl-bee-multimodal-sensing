@@ -4,7 +4,6 @@ import argparse
 import gymnasium as gym
 from tqdm.notebook import trange
 from stable_baselines3 import TD3
-from gymnasium.wrappers.record_video import RecordVideo
 from model import init_gym, load_model
 
 
@@ -42,11 +41,12 @@ if __name__ == "__main__":
     alias = config["setup"]["alias"]
 
     output_path = os.path.join(config["setup"]["path"], alias)
-    video_path = os.path.join(output_path, "video")
 
     # load model
-    env = init_gym(config["setup"]["gym_name"], render_mode="human")
+    env = init_gym(
+        config["setup"]["gym_name"],
+        render_mode="human",
+        video_path=os.path.join(output_path, "video"),
+    )
     model = load_model(env, output_path, replay_buffer=None, logger=None)
-
     frames = render_prediction(model, config["test"]["prediction_steps"])
-    # env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
