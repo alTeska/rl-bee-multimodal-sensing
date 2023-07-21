@@ -1,5 +1,5 @@
 setup:
-  path: models/bee-world/
+  path: models/bee-world-1000/
   alias: round1
 
   continue_training: False
@@ -13,9 +13,10 @@ env:
 
 train: 
   timesteps: 500_000
-  max_episode_steps: 3000
+  max_episode_steps: 1000
   policy_kwargs: { net_arch: [200, 100], activation_fn: ReLU }
   learning_rate: 0.001
+  max_no_improvement_evals: 100
 
 test:
   prediction_steps: 1000

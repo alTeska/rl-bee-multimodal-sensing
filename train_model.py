@@ -81,7 +81,12 @@ def custom_training(config):
     )
 
     # Set up logging for training progress
-    callback, logger = setup_logging(env, logs_path, output_path)
+    callback, logger = setup_logging(
+        env,
+        logs_path,
+        output_path,
+        max_no_improvement_evals=config["train"]["max_no_improvement_evals"],
+    )
 
     if config["setup"]["continue_training"] and os.path.exists(input_path):
         print("Loading existing model")
