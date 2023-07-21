@@ -85,6 +85,47 @@ def setup_logging(env, logs_path, best_model_save_path):
     return eval_callback, logger
 
 
+def new_model(
+    output_path,
+    gym_name,
+    policy_kwargs,
+    learning_rate,
+):
+    logs_path = os.path.join(output_path, "logs")
+    replay_buffer_path = os.path.join(output_path, "replay_buffer")
+    create_directory(logs_path)
+
+    env = init_gym(gym_name, logs_path=logs_path)
+    callback, logger = setup_logging(env, logs_path, output_path)
+    model = init_model(env, policy_kwargs, learning_rate, logger=logger)
+
+    return model, env, callback
+
+
+def load_existing_model(
+    input_path,
+    output_path,
+    gym_name,
+    policy_kwargs,
+    learning_rate,
+):
+    logs_path = os.path.join(output_path, "logs")
+    replay_buffer_path = os.path.join(input_path, "replay_buffer")
+    create_directory(output_path)
+    create_directory(logs_path)
+
+    env = init_gym(gym_name, logs_path=logs_path)
+    model = TD3.load(os.path.join(input_path, "best_model"))
+
+    model.set_env(DummyVecEnv([lambda: env]))
+    model.load_replay_buffer(replay_buffer_path)
+
+    callback, logger = setup_logging(env, logs_path, output_path)
+    model.set_logger(logger)
+
+    return model, env, callback
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the RL model.")
     parser.add_argument(
@@ -103,34 +144,42 @@ if __name__ == "__main__":
     )
 
     base_path = config["setup"]["path"]
-    logs_path = base_path + "logs/"
-    replay_buffer_path = base_path + "replay_buffer"
-
     gym_name = config["setup"]["gym_name"]
     policy_kwargs = config["train"]["policy_kwargs"]
     learning_rate = config["train"]["learning_rate"]
-    timesteps = config["train"]["timesteps"]
 
-    if os.path.exists(base_path):
-        print("Loading existing model:", base_path)
-        model = TD3.load(base_path + "best_model")
-        env = init_gym(gym_name, logs_path=logs_path)
-        model.set_env(DummyVecEnv([lambda: env]))
-        model.load_replay_buffer(replay_buffer_path)
-        callback, logger = setup_logging(env, logs_path, base_path)
+    alias = config["setup"]["alias"]
+    old_alias = config["setup"]["old_alias"]
+    input_path = os.path.join(base_path, old_alias)
+    output_path = os.path.join(base_path, alias)
+
+    if config["setup"]["continue_training"] and os.path.exists(input_path):
+        print("Loading existing model")
+
+        model, env, callback = load_existing_model(
+            input_path,
+            output_path,
+            gym_name,
+            policy_kwargs,
+            learning_rate,
+        )
 
     else:
-        create_directory(logs_path)
+        print("Creating a new model")
 
-        env = init_gym(gym_name, logs_path=logs_path)
-        callback, logger = setup_logging(env, logs_path, base_path)
-        model = init_model(env, policy_kwargs, learning_rate, logger=logger)
+        model, env, callback = new_model(
+            output_path,
+            gym_name,
+            policy_kwargs,
+            learning_rate,
+        )
 
     model.learn(
-        total_timesteps=timesteps,
+        total_timesteps=config["train"]["timesteps"],
         reset_num_timesteps=False,
         callback=callback,
     )
-    model.save_replay_buffer(replay_buffer_path)
+
+    model.save_replay_buffer(os.path.join(output_path, "replay_buffer"))
 
     env.close()

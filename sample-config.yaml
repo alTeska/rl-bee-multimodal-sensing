@@ -1,14 +1,15 @@
 setup:
-  path: model/bee-world-2/
+  path: models/bee-world/
   gym_name: BeeWorld
   algorithm: TD3
-  continue-training: False
-  alias: None
+  alias: round3
+  continue_training: True
+  old_alias: round2
 
 train: 
-  timesteps: 10000
+  timesteps: 2000
   iter_max: 10
-  policy_kwargs: {net_arch: [100 ,100], activation_fn: ReLU}
+  policy_kwargs: { net_arch: [100 ,100], activation_fn: ReLU }
   learning_rate: 0.001
 
 test:
