@@ -5,7 +5,9 @@ from pygame.locals import *
 from gymnasium import spaces
 
 
-def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
+def cone_locations(
+    agent_location, agent_theta, cone_phi, scale_factor
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the positions of two points forming a  vision cone around the agent for the visualization
 
     Args:
@@ -37,13 +39,13 @@ def cone_locations(agent_location, agent_theta, cone_phi, scale_factor):
     return point_left, point_right
 
 
-def intersect_segments(sA, sB):
+def intersect_segments(sA, sB) -> tuple[float, float]:
     """Return an intersection point for two line segments
     https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection?useskin=vector#Given_two_points_on_each_line_segment
 
     Args:
-        sA (_type_): segment A
-        sB (_type_): segment B
+        sA: segment A
+        sB: segment B
     """
     pA1, pA2 = sA
     pB1, pB2 = sB
@@ -111,7 +113,7 @@ class BeeWorld(gym.Env):
             [(0.0, 0.0), (self.size, 0.0)],
             [(0.0, self.size), (self.size, self.size)],
             [(self.size, 0.0), (self.size, self.size)],
-            # [(self.size / 2, 2.0), (self.size / 2, 8.0)],
+            [(self.size / 2, 0.0), (self.size / 2, 5.0)],
             # [(2.0, self.size / 2), (8.0, self.size / 2)],
         ]
 
@@ -143,7 +145,7 @@ class BeeWorld(gym.Env):
 
         self.trajectory = []
 
-    def _check_vision(self):
+    def _check_vision(self) -> int:
         """
         Returns 1 if the bee can see the goal and 0 otherwise
         """
@@ -162,7 +164,7 @@ class BeeWorld(gym.Env):
 
         return 1
 
-    def _get_smell(self):
+    def _get_smell(self) -> np.ndarray:
         """
         Returns strength of smell at agent's current location
         """
@@ -175,11 +177,23 @@ class BeeWorld(gym.Env):
             dtype=self.dtype,
         )
 
-    def _get_time(self):
+    def _get_time(self) -> np.ndarray:
+        """
+        Returns the current timestep scaled between 0 and 1
+        """
         self.steps += 1
         return np.array([self.steps / self.max_episode_steps], dtype=self.dtype)
 
-    def _get_visible_wall(self, n_casts=7):
+    def _get_visible_wall(self, n_casts=7) -> np.ndarray:
+        """Returns the distance to the closest wall in the agents cone of vision
+        Uses raycasts equally spaced inside the vision cone
+
+        Args:
+            n_casts (int, optional): number of raycasts. Defaults to 7.
+
+        Returns:
+            np.ndarray: distance to the closest wall
+        """
         mins = []
 
         angles = np.linspace(-self.cone_phi, self.cone_phi, n_casts)
@@ -200,7 +214,7 @@ class BeeWorld(gym.Env):
             mins.append(min(ds))
         return np.array([min(mins) / self.size], dtype=self.dtype)
 
-    def _get_obs(self):
+    def _get_obs(self) -> dict:
         """
         Returns a dictionary with agent's current observations
         """
@@ -214,14 +228,20 @@ class BeeWorld(gym.Env):
             "wall": self._get_visible_wall(),
         }
 
-    def _get_info(self):
+    def _get_info(self) -> dict:
         """
         Provides auxiliary information
         """
         return {"is_success": False}
 
-    def _check_goal_intersections(self):
+    def _check_goal_intersections(self) -> bool:
+        """Check for intersections between the goal and walls
+
+        Returns:
+            bool: intersection exists
+        """
         for wall in self.walls:
+            # if one of the endpoints of a wall is in the goal they intersect
             if np.linalg.norm(self._target_location - wall[0], ord=2) < self.goal_size:
                 return True
             if np.linalg.norm(self._target_location - wall[1], ord=2) < self.goal_size:
@@ -232,19 +252,22 @@ class BeeWorld(gym.Env):
             a = np.linalg.norm(target_vector, ord=2)
             c = np.linalg.norm(wall_vector, ord=2)
 
+            # project a vector between one endpoint and the goal center on the wall
             projection = np.dot(target_vector, wall_vector) / c
 
+            # if the projection is negative or larger than the wall there are no intersections
             if (projection > c) or (projection < 0):
                 continue
 
             dist = np.sqrt(a**2 - projection**2)
 
+            # check the distance beween the goal and the wall segment
             if dist < self.goal_size:
                 return True
 
         return False
 
-    def reset(self, seed=None, options=None):
+    def reset(self, seed=None, options=None) -> tuple[dict, dict]:
         super().reset(seed=seed)
 
         self.steps = 0
@@ -280,11 +303,14 @@ class BeeWorld(gym.Env):
 
         return observation, info
 
-    def segment_wall_intersections(self, seg):
+    def segment_wall_intersections(self, seg) -> list:
         """Check whether a segment intesects with any walls
 
         Args:
-            seg (_type_): line segment
+            seg: line segment
+
+        Returns:
+            list: list of intersection points
         """
         p = []
 
@@ -295,9 +321,15 @@ class BeeWorld(gym.Env):
 
         return p
 
-    def step(self, action):
-        """
-        Returns (observation, reward, done, info)
+    def step(self, action) -> tuple[dict, float, bool, bool, dict]:
+        """Performs a step based on the action.
+        Performs movement integration, calculates rewards
+
+        Args:
+            action (np.ndarray): action to take
+
+        Returns:
+            tuple[dict, float, bool, bool, dict]: tuple of (observation, reward, terminated, done, info)
         """
         reward = 0
 
@@ -355,7 +387,7 @@ class BeeWorld(gym.Env):
 
         return observation, reward, terminated, terminated, info
 
-    def render(self, scale=0.9):
+    def render(self, scale=0.9) -> None:
         """
         Renders the current state of the environment using Pygame.
         The screen is scaled Calculate the 90% screen size, the positions are also transformed based on the scale factor.
@@ -447,7 +479,7 @@ class BeeWorld(gym.Env):
                 np.array(pygame.surfarray.pixels3d(self.surf)), axes=(1, 0, 2)
             )
 
-    def close(self):
+    def close(self) -> None:
         """
         Clean up the environment
         """
