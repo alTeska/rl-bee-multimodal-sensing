@@ -36,7 +36,9 @@ def custom_training(config):
         print("Loading existing model")
 
         replay_buffer_path = os.path.join(input_path, "replay_buffer")
-        model = load_model(env, path, replay_buffer=replay_buffer_path, logger=logger)
+        model = load_model(
+            env, input_path, replay_buffer=replay_buffer_path, logger=logger
+        )
 
     else:
         print("Creating a new model")
