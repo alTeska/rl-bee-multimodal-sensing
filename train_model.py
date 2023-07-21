@@ -74,6 +74,7 @@ def custom_training(config):
         logs_path=logs_path,
         video_path=None,
         render_mode=config["env"]["render_mode"],
+        max_episode_steps=config["train"]["max_episode_steps"],
     )
 
     # Set up logging for training progress

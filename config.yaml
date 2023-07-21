@@ -14,8 +14,9 @@ env:
 train: 
   timesteps: 1000000
   iter_max: 10
+  max_episode_steps: 3000
   policy_kwargs: { net_arch: [200, 100], activation_fn: ReLU }
-  learning_rate: 0.001
+  learning_rate: 0.01
 
 test:
   prediction_steps: 1000
