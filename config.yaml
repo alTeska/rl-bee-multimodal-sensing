@@ -1,6 +1,6 @@
 setup:
   path: models/bee-world/
-  alias: round2
+  alias: round1
 
   continue_training: False
   old_alias: round1
@@ -12,9 +12,9 @@ env:
   video: True
 
 train: 
-  timesteps: 10000
+  timesteps: 1000000
   iter_max: 10
-  policy_kwargs: { net_arch: [100 ,100], activation_fn: ReLU }
+  policy_kwargs: { net_arch: [200, 100], activation_fn: ReLU }
   learning_rate: 0.001
 
 test:
