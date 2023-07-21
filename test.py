@@ -2,12 +2,10 @@ import os
 import yaml
 import argparse
 import gymnasium as gym
-from train import init_gym
 from tqdm.notebook import trange
 from stable_baselines3 import TD3
-from stable_baselines3.common.vec_env import DummyVecEnv
 from gymnasium.wrappers.record_video import RecordVideo
-from model import init_model, load_model, setup_logging
+from model import init_gym, load_model
 
 
 def render_prediction(

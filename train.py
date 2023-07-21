@@ -1,12 +1,11 @@
 import os
-import argparse
 import yaml
+import argparse
 import numpy as np
 import torch.nn as nn
 from utils import create_directory
 from model import init_gym, init_model, load_model, setup_logging
 from stable_baselines3 import TD3
-from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 def new_model(
