@@ -1,5 +1,5 @@
 setup:
-  path: models/bee-world-500k/
+  path: models/bee-world-1ml/
   alias: round4
 
   continue_training: True
@@ -16,7 +16,7 @@ env:
   video: True
 
 train: 
-  timesteps: 500_000
+  timesteps: 1_000_000
   max_episode_steps: 5000
   policy_kwargs: { net_arch: [300, 200], activation_fn: ReLU }
   learning_rate: 0.001
