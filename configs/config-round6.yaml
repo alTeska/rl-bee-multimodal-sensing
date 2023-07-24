@@ -15,12 +15,14 @@ env:
     ]
   goal_size: 0.5
   video: True
+  agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
+  goal_location_range: [[8.0, 10.0], [0.0, 10.0]]
 
 train: 
   timesteps: 1_000_000
   max_episode_steps: 10000
   policy_kwargs: { net_arch: [300, 200], activation_fn: ReLU }
-  learning_rate: 0.0001
+  learning_rate: 0.0005
   max_no_improvement_evals: 200
   eval_freq: 1000
 

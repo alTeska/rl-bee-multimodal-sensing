@@ -80,6 +80,8 @@ def custom_training(config):
         max_episode_steps=config["train"]["max_episode_steps"],
         walls=config["env"]["walls"],
         goal_size=config["env"]["goal_size"],
+        agent_location_range=config["env"]["agent_location_range"],
+        goal_location_range=config["env"]["goal_location_range"],
     )
     # initialize the environment for evaluation callback
     env_eval = init_gym(
@@ -90,6 +92,8 @@ def custom_training(config):
         max_episode_steps=config["train"]["max_episode_steps"],
         walls=config["env"]["walls"],
         goal_size=config["env"]["goal_size"],
+        agent_location_range=config["env"]["agent_location_range"],
+        goal_location_range=config["env"]["goal_location_range"],
     )
 
     # Set up logging for training progress
@@ -106,7 +110,11 @@ def custom_training(config):
         # Load the existing model for further training
         replay_buffer_path = os.path.join(input_path, "replay_buffer")
         model = load_model(
-            env, input_path, replay_buffer=replay_buffer_path, logger=logger
+            env,
+            input_path,
+            replay_buffer=replay_buffer_path,
+            logger=logger,
+            learning_rate=config["train"]["learning_rate"],
         )
     else:
         print("Creating a new model")

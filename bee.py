@@ -90,12 +90,15 @@ class BeeWorld(gym.Env):
         goal_size=2.0,
         walls=[
             [(5.0, 0.0), (5.0, 5.0)],
-            # [(2.0, 5.0), (8.0, 5.0)],
         ],
+        agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
+        goal_location_range=[(5.0, 10.0), (0.0, 10.0)],
     ):
         self.dtype = "float32"
         self.render_mode = render_mode
         self.max_episode_steps = max_episode_steps
+        self.agent_location_range = agent_location_range
+        self.goal_location_range = goal_location_range
 
         self.steps = 0
 
@@ -280,23 +283,45 @@ class BeeWorld(gym.Env):
         self._agent_theta = 0.0  # Agent's direction as angle from x-axis
         self._agent_ang_vel = 0.0  # Angular velocity
 
-        self._agent_location = (
-            self.np_random.random(size=2, dtype=self.dtype) * self.size
+        #  Agent location limited on x-axis
+        self._agent_location = np.array(
+            [
+                self.np_random.uniform(
+                    low=self.agent_location_range[0][0],
+                    high=self.agent_location_range[0][1],
+                    size=1,
+                )[0],
+                self.np_random.uniform(
+                    low=self.agent_location_range[1][0],
+                    high=self.agent_location_range[1][1],
+                    size=1,
+                )[0],
+            ],
+            dtype=self.dtype,
         )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
+
         while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = (
-                self.np_random.random(size=2, dtype=self.dtype) * self.size
+            self._target_location = np.array(
+                [
+                    self.np_random.uniform(
+                        low=self.goal_location_range[0][0],
+                        high=self.goal_location_range[0][1],
+                        size=1,
+                    )[0],
+                    self.np_random.uniform(
+                        low=self.goal_location_range[1][0],
+                        high=self.goal_location_range[1][1],
+                        size=1,
+                    )[0],
+                ],
+                dtype=self.dtype,
             )
+
             if self._check_goal_intersections():
                 self._target_location = self._agent_location
-
-        # location close to the target
-        # self._target_location = self._agent_location + (
-        # self.np_random.random(size=2, dtype=self.dtype) * self.size * 0.3
-        # )
 
         observation = self._get_obs()
         info = self._get_info()
@@ -373,10 +398,8 @@ class BeeWorld(gym.Env):
 
         factor = 0.01
         # Rewards
+
         reward += 1000 if terminated else 0  # Binary sparse rewards
-        # reward += observation["smell"][0]
-        # reward += observation["vision"]
-        # reward += observation["time"]  # time passed
         reward -= 0.3 * np.sum(np.abs(action) ** 2)  # Energy expenditure
         reward -= goal_distance * factor
 

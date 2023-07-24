@@ -21,13 +21,16 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 def init_gym(
     gym_name="BeeWorld",
     render_mode="rgb_array",
+    frame_stack_size=None,
     max_episode_steps=1000,
-    logs_path=None,
     video_path=None,
+    logs_path=None,
     walls=[
         [(5.0, 0.0), (5.0, 5.0)],
     ],
     goal_size=2.0,
+    agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
+    goal_location_range=[(5.0, 10.0), (0.0, 10.0)],
 ):
     """
     Initialize the Gym environment with the given setup.
@@ -53,6 +56,8 @@ def init_gym(
         render_mode=render_mode,
         walls=walls,
         goal_size=goal_size,
+        agent_location_range=agent_location_range,
+        goal_location_range=goal_location_range,
     )
 
     if video_path:
@@ -62,7 +67,6 @@ def init_gym(
         env = Monitor(env, logs_path, allow_early_resets=True)
 
     env.reset()
-
     return env
 
 
@@ -107,7 +111,13 @@ def init_model(
     return model
 
 
-def load_model(env, path, replay_buffer=None, logger=None):
+def load_model(
+    env,
+    path,
+    replay_buffer=None,
+    logger=None,
+    learning_rate=0.001,
+):
     """
     Load a pre-trained TD3 model.
 
@@ -120,7 +130,9 @@ def load_model(env, path, replay_buffer=None, logger=None):
     Returns:
         stable_baselines3.TD3: The loaded TD3 model.
     """
-    model = TD3.load(os.path.join(path, "best_model"))
+    model = TD3.load(
+        os.path.join(path, "best_model"), learning_rate=lambda _: learning_rate
+    )
     model.set_env(DummyVecEnv([lambda: env]))
 
     if replay_buffer:
