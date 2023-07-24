@@ -13,6 +13,7 @@ env:
   video: True
   agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
   goal_location_range: [[6.0, 10.0], [0.0, 10.0]]
+  history: True
 
 train: 
   timesteps: 1_000_000
