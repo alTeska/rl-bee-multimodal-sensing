@@ -302,6 +302,7 @@ class BeeWorld(gym.Env):
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
+
         while np.array_equal(self._target_location, self._agent_location):
             self._target_location = np.array(
                 [
@@ -318,8 +319,9 @@ class BeeWorld(gym.Env):
                 ],
                 dtype=self.dtype,
             )
-            if self._check_goal_intersections():
-                self._target_location = self._agent_location
+
+        if self._check_goal_intersections():
+            self._target_location = self._agent_location
 
         observation = self._get_obs()
         info = self._get_info()
