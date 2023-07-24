@@ -1,9 +1,9 @@
 setup:
   path: models/bee-world-500k/
-  alias: round5
+  alias: round6
 
   continue_training: True
-  old_alias: round4
+  old_alias: round5
 env:
   algorithm: TD3
   gym_name: BeeWorld
@@ -18,7 +18,7 @@ env:
 
 train: 
   timesteps: 500_000
-  max_episode_steps: 5000
+  max_episode_steps: 10000
   policy_kwargs: { net_arch: [300, 200], activation_fn: ReLU }
   learning_rate: 0.001
   max_no_improvement_evals: 200
