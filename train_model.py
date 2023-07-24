@@ -82,6 +82,7 @@ def custom_training(config):
         goal_size=config["env"]["goal_size"],
         agent_location_range=config["env"]["agent_location_range"],
         goal_location_range=config["env"]["goal_location_range"],
+        frame_stack_size=config["env"]["frame_stack_size"],
     )
     # initialize the environment for evaluation callback
     env_eval = init_gym(
@@ -94,6 +95,7 @@ def custom_training(config):
         goal_size=config["env"]["goal_size"],
         agent_location_range=config["env"]["agent_location_range"],
         goal_location_range=config["env"]["goal_location_range"],
+        frame_stack_size=config["env"]["frame_stack_size"],
     )
 
     # Set up logging for training progress

@@ -16,6 +16,7 @@ from stable_baselines3.common.callbacks import (
 from gymnasium.wrappers.record_video import RecordVideo
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+from gymnasium.wrappers import FrameStack, FlattenObservation
 
 
 def init_gym(
@@ -60,6 +61,10 @@ def init_gym(
         goal_location_range=goal_location_range,
     )
 
+    if frame_stack_size:
+        env = FlattenObservation(env)
+        env = FrameStack(env, num_stack=frame_stack_size)
+
     if video_path:
         env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
 
@@ -97,7 +102,7 @@ def init_model(
     )
 
     model = TD3(
-        "MultiInputPolicy",
+        "MlpPolicy",  # "MultiInputPolicy",
         env,
         action_noise=action_noise,
         verbose=1,

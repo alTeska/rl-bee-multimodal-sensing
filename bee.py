@@ -327,7 +327,6 @@ class BeeWorld(gym.Env):
         info = self._get_info()
 
         self.obs = observation
-
         self.trajectory = []  # Reset trajectory
 
         if self.render_mode == "human":
