@@ -107,7 +107,7 @@ def init_model(
     return model
 
 
-def load_model(env, path, replay_buffer=None, logger=None):
+def load_model(env, path, lr, replay_buffer=None, logger=None):
     """
     Load a pre-trained TD3 model.
 
@@ -120,7 +120,7 @@ def load_model(env, path, replay_buffer=None, logger=None):
     Returns:
         stable_baselines3.TD3: The loaded TD3 model.
     """
-    model = TD3.load(os.path.join(path, "best_model"))
+    model = TD3.load(os.path.join(path, "best_model"), learning_rate=lambda _: lr)
     model.set_env(DummyVecEnv([lambda: env]))
 
     if replay_buffer:
