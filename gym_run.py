@@ -9,8 +9,10 @@ env = init_gym(
     render_mode="human",
     walls=[
         [[5.0, 0.0], [5.0, 5.0]],
+        [[2.5, 10.0], [2.5, 6.0]],
+        [[7.5, 10.0], [7.5, 6.0]],
     ],
-    goal_size=2.0,
+    goal_size=0.5,
 )
 
 model = init_model(
