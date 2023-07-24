@@ -14,6 +14,8 @@ env:
     ]
   goal_size: 0.5
   video: True
+  agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
+  goal_location_range: [[8.0, 10.0], [0.0, 10.0]]
 
 train: 
   timesteps: 1_000_000

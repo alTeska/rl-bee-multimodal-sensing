@@ -13,7 +13,10 @@ env = init_gym(
         [[7.5, 10.0], [7.5, 6.0]],
     ],
     goal_size=0.5,
+    agent_location_range=[[0.0, 2.0], [0.0, 10.0]],
+    goal_location_range=[[5.0, 10.0], [0.0, 10.0]],
 )
+
 
 model = init_model(
     env, policy_kwargs={"net_arch": [100, 100], "activation_fn": nn.ReLU}

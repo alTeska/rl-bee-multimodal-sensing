@@ -92,7 +92,7 @@ class BeeWorld(gym.Env):
             [(5.0, 0.0), (5.0, 5.0)],
         ],
         agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
-        goal_location_range=[(8.0, 10.0), (0.0, 10.0)],
+        goal_location_range=[(5.0, 10.0), (0.0, 10.0)],
     ):
         self.dtype = "float32"
         self.render_mode = render_mode
@@ -320,8 +320,8 @@ class BeeWorld(gym.Env):
                 dtype=self.dtype,
             )
 
-        if self._check_goal_intersections():
-            self._target_location = self._agent_location
+            if self._check_goal_intersections():
+                self._target_location = self._agent_location
 
         observation = self._get_obs()
         info = self._get_info()
