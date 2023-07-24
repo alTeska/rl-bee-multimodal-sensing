@@ -21,9 +21,10 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 def init_gym(
     gym_name="BeeWorld",
     render_mode="rgb_array",
+    frame_stack_size=None,
     max_episode_steps=1000,
-    logs_path=None,
     video_path=None,
+    logs_path=None,
     walls=[
         [(5.0, 0.0), (5.0, 5.0)],
     ],
@@ -66,7 +67,6 @@ def init_gym(
         env = Monitor(env, logs_path, allow_early_resets=True)
 
     env.reset()
-
     return env
 
 
@@ -111,7 +111,13 @@ def init_model(
     return model
 
 
-def load_model(env, path, replay_buffer=None, logger=None):
+def load_model(
+    env,
+    path,
+    replay_buffer=None,
+    logger=None,
+    learning_rate=0.001,
+):
     """
     Load a pre-trained TD3 model.
 
@@ -124,7 +130,9 @@ def load_model(env, path, replay_buffer=None, logger=None):
     Returns:
         stable_baselines3.TD3: The loaded TD3 model.
     """
-    model = TD3.load(os.path.join(path, "best_model"))
+    model = TD3.load(
+        os.path.join(path, "best_model"), learning_rate=lambda _: learning_rate
+    )
     model.set_env(DummyVecEnv([lambda: env]))
 
     if replay_buffer:

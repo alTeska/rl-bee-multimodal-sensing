@@ -110,7 +110,11 @@ def custom_training(config):
         # Load the existing model for further training
         replay_buffer_path = os.path.join(input_path, "replay_buffer")
         model = load_model(
-            env, input_path, replay_buffer=replay_buffer_path, logger=logger
+            env,
+            input_path,
+            replay_buffer=replay_buffer_path,
+            logger=logger,
+            learning_rate=config["train"]["learning_rate"],
         )
     else:
         print("Creating a new model")
