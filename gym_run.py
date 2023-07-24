@@ -1,12 +1,12 @@
 import numpy as np
 import torch.nn as nn
-from model import init_gym, init_model, load_model
+from model import init_gym, init_model
 
 
 env = init_gym(
     "BeeWorld",
     logs_path="test_logs/",
-    render_mode="rgb_array",
+    render_mode="human",
     walls=[
         [[5.0, 0.0], [5.0, 5.0]],
         [[2.5, 10.0], [2.5, 6.0]],
