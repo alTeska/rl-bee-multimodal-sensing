@@ -280,23 +280,27 @@ class BeeWorld(gym.Env):
         self._agent_theta = 0.0  # Agent's direction as angle from x-axis
         self._agent_ang_vel = 0.0  # Angular velocity
 
-        self._agent_location = (
-            self.np_random.random(size=2, dtype=self.dtype) * self.size
+        #  Agent location limited on x-axis
+        self._agent_location = np.array(
+            [
+                self.np_random.uniform(low=0, high=2, size=1)[0],
+                self.np_random.random(size=1)[0] * self.size,
+            ],
+            dtype=self.dtype,
         )
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
-            self._target_location = (
-                self.np_random.random(size=2, dtype=self.dtype) * self.size
+            self._target_location = np.array(
+                [
+                    self.np_random.uniform(low=8, high=10, size=1)[0],
+                    self.np_random.random(size=1)[0] * self.size,
+                ],
+                dtype=self.dtype,
             )
             if self._check_goal_intersections():
                 self._target_location = self._agent_location
-
-        # location close to the target
-        # self._target_location = self._agent_location + (
-        # self.np_random.random(size=2, dtype=self.dtype) * self.size * 0.3
-        # )
 
         observation = self._get_obs()
         info = self._get_info()
