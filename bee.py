@@ -90,7 +90,6 @@ class BeeWorld(gym.Env):
         goal_size=2.0,
         walls=[
             [(5.0, 0.0), (5.0, 5.0)],
-            # [(2.0, 5.0), (8.0, 5.0)],
         ],
         agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
         goal_location_range=[(8.0, 10.0), (0.0, 10.0)],
