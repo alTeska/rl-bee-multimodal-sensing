@@ -28,6 +28,8 @@ def init_gym(
         [(5.0, 0.0), (5.0, 5.0)],
     ],
     goal_size=2.0,
+    agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
+    goal_location_range=[(8.0, 10.0), (0.0, 10.0)],
 ):
     """
     Initialize the Gym environment with the given setup.
@@ -53,6 +55,8 @@ def init_gym(
         render_mode=render_mode,
         walls=walls,
         goal_size=goal_size,
+        agent_location_range=agent_location_range,
+        goal_location_range=goal_location_range,
     )
 
     if video_path:
