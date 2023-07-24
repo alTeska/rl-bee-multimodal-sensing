@@ -92,10 +92,14 @@ class BeeWorld(gym.Env):
             [(5.0, 0.0), (5.0, 5.0)],
             # [(2.0, 5.0), (8.0, 5.0)],
         ],
+        agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
+        goal_location_range=[(8.0, 10.0), (0.0, 10.0)],
     ):
         self.dtype = "float32"
         self.render_mode = render_mode
         self.max_episode_steps = max_episode_steps
+        self.agent_location_range = agent_location_range
+        self.goal_location_range = goal_location_range
 
         self.steps = 0
 
@@ -283,8 +287,16 @@ class BeeWorld(gym.Env):
         #  Agent location limited on x-axis
         self._agent_location = np.array(
             [
-                self.np_random.uniform(low=0, high=2, size=1)[0],
-                self.np_random.random(size=1)[0] * self.size,
+                self.np_random.uniform(
+                    low=self.agent_location_range[0][0],
+                    high=self.agent_location_range[0][1],
+                    size=1,
+                )[0],
+                self.np_random.uniform(
+                    low=self.agent_location_range[1][0],
+                    high=self.agent_location_range[1][1],
+                    size=1,
+                )[0],
             ],
             dtype=self.dtype,
         )
@@ -294,8 +306,16 @@ class BeeWorld(gym.Env):
         while np.array_equal(self._target_location, self._agent_location):
             self._target_location = np.array(
                 [
-                    self.np_random.uniform(low=8, high=10, size=1)[0],
-                    self.np_random.random(size=1)[0] * self.size,
+                    self.np_random.uniform(
+                        low=self.goal_location_range[0][0],
+                        high=self.goal_location_range[0][1],
+                        size=1,
+                    )[0],
+                    self.np_random.uniform(
+                        low=self.goal_location_range[1][0],
+                        high=self.goal_location_range[1][1],
+                        size=1,
+                    )[0],
                 ],
                 dtype=self.dtype,
             )
@@ -377,10 +397,8 @@ class BeeWorld(gym.Env):
 
         factor = 0.01
         # Rewards
+
         reward += 1000 if terminated else 0  # Binary sparse rewards
-        # reward += observation["smell"][0]
-        # reward += observation["vision"]
-        # reward += observation["time"]  # time passed
         reward -= 0.3 * np.sum(np.abs(action) ** 2)  # Energy expenditure
         reward -= goal_distance * factor
 
