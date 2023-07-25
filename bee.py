@@ -93,13 +93,16 @@ class BeeWorld(gym.Env):
         ],
         agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
         goal_location_range=[(5.0, 10.0), (0.0, 10.0)],
+        noise_smell=False,
+        noise_vision=False,
     ):
         self.dtype = "float32"
         self.render_mode = render_mode
         self.max_episode_steps = max_episode_steps
         self.agent_location_range = agent_location_range
         self.goal_location_range = goal_location_range
-
+        self.noise_vision = noise_vision
+        self.noise_smell = noise_smell
         self.steps = 0
 
         self.size = size  # Room size
@@ -157,30 +160,39 @@ class BeeWorld(gym.Env):
         """
         Returns 1 if the bee can see the goal and 0 otherwise
         """
+        noise = 0
+        if self.noise_vision:
+            noise = np.random.normal(0, 1, size=1)[0]
+
         ray = self._target_location - self._agent_location  # raycast from agent to goal
         ang = (np.arctan2(ray[1], ray[0])) % (2 * np.pi)  # angle of raycast
 
         diff = np.abs(ang - self._agent_theta)
 
         if (diff > self.cone_phi) and ((2 * np.pi - diff) > self.cone_phi):
-            return 0
+            return 0 + noise
 
         if self.segment_wall_intersections(
             [self._agent_location, self._target_location]
         ):
-            return 0
+            return 0 + noise
 
-        return 1
+        return 1 + noise
 
     def _get_smell(self) -> np.ndarray:
         """
         Returns strength of smell at agent's current location
         """
+        noise = 0
+        if self.noise_smell:
+            noise = np.random.normal(0, 1, size=1)[0]
+
         return np.array(
             [
                 np.exp(
                     -np.linalg.norm(self._agent_location - self._target_location, ord=2)
                 )
+                + noise
             ],
             dtype=self.dtype,
         )

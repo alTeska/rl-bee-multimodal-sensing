@@ -1,5 +1,5 @@
 setup:
-  path: models/bee-world-500k_v2/
+  path: models/bee-world-500k_v3/
   alias: round2
 
   continue_training: True
@@ -8,8 +8,10 @@ env:
   algorithm: TD3
   gym_name: BeeWorld
   render_mode: rgb_array
-  walls: []
-  goal_size: 1.0
+  walls: [
+        [[5.0, 0.0], [5.0, 5.0]],
+  ]
+  goal_size: 2.0
   video: True
   agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
   goal_location_range: [[6.0, 10.0], [0.0, 10.0]]

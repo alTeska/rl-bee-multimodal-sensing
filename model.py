@@ -32,6 +32,8 @@ def init_gym(
     goal_size=2.0,
     agent_location_range=[(0.0, 2.0), (0.0, 10.0)],
     goal_location_range=[(5.0, 10.0), (0.0, 10.0)],
+    noise_smell=False,
+    noise_vision=False,
 ):
     """
     Initialize the Gym environment with the given setup.
@@ -59,6 +61,8 @@ def init_gym(
         goal_size=goal_size,
         agent_location_range=agent_location_range,
         goal_location_range=goal_location_range,
+        noise_smell=noise_smell,
+        noise_vision=noise_vision,
     )
 
     if frame_stack_size:

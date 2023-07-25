@@ -1,5 +1,5 @@
 setup:
-  path: models/bee-world-500k_v2/
+  path: models/bee-world-500k_v3/
   alias: round1
 
   continue_training: False
