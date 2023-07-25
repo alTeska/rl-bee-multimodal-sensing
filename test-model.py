@@ -15,6 +15,8 @@ with open(config_path, "r") as file:
     config = yaml.safe_load(file)
 
 output_path = os.path.join(config["setup"]["path"], config["setup"]["alias"])
+log_path = os.path.join(output_path, "test_logs")
+os.makedirs(log_path, exist_ok=True)
 
 # Load the model and generate prediction frames
 env = init_gym(
@@ -36,10 +38,11 @@ model = load_model(env, output_path, replay_buffer=None, logger=None)
 res = evaluate_policy(
     model,
     model.get_env(),
-    n_eval_episodes=25,
+    n_eval_episodes=config["test"]["eval_episodes"],
     deterministic=True,
     render=False,
     return_episode_rewards=True,
 )
 
-np.savetxt("log.txt", np.array(res))
+log = os.path.join(log_path, "log.txt")
+np.savetxt(log, np.array(res))
