@@ -44,5 +44,5 @@ res = evaluate_policy(
     return_episode_rewards=True,
 )
 
-log = os.path.join(log_path, "log.txt")
+log = os.path.join(log_path, f"{config['test']['log_name']}.txt")
 np.savetxt(log, np.array(res))
