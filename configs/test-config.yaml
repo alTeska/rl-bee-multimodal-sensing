@@ -1,9 +1,9 @@
 setup:
   path: models/bee-world-500k_v3/
-  alias: round4
+  alias: round5
 
   continue_training: True
-  old_alias: round4
+  old_alias: round5
 env:
   algorithm: TD3
   gym_name: BeeWorld
@@ -16,7 +16,7 @@ env:
   agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
   goal_location_range: [[8.0, 10.0], [0.0, 10.0]]
   frame_stack_size: 5
-  noise_vision: True
+  noise_vision: False
   noise_smell: True
 
 train: 
@@ -30,5 +30,6 @@ train:
 
 test:
   prediction_steps: 1000
-
-
+  eval_episodes: 1000
+  log_name: "long_good"
+  max_episode_steps: 5000
