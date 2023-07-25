@@ -162,7 +162,7 @@ class BeeWorld(gym.Env):
         """
         noise = 0
         if self.noise_vision:
-            noise = np.random.normal(0, 1, size=1)[0]
+            noise = np.random.binomial(1, 0.5)
 
         ray = self._target_location - self._agent_location  # raycast from agent to goal
         ang = (np.arctan2(ray[1], ray[0])) % (2 * np.pi)  # angle of raycast
@@ -177,7 +177,7 @@ class BeeWorld(gym.Env):
         ):
             return 0 + noise
 
-        return 1 + noise
+        return 1
 
     def _get_smell(self) -> np.ndarray:
         """
@@ -185,7 +185,7 @@ class BeeWorld(gym.Env):
         """
         noise = 0
         if self.noise_smell:
-            noise = np.random.normal(0, 1, size=1)[0]
+            noise = np.random.normal(0.5, 0.2)
 
         return np.array(
             [
