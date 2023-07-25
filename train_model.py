@@ -73,27 +73,37 @@ def custom_training(config):
 
     # Initialize the Gym environment for training
     env = init_gym(
-        gym_name=config["env"]["gym_name"],
+        gym_name=config["env"].get("gym_name", "BeeWorld"),
         logs_path=logs_path,
         video_path=video_path,
-        render_mode=config["env"]["render_mode"],
-        max_episode_steps=config["train"]["max_episode_steps"],
-        walls=config["env"]["walls"],
-        goal_size=config["env"]["goal_size"],
-        agent_location_range=config["env"]["agent_location_range"],
-        goal_location_range=config["env"]["goal_location_range"],
+        render_mode=config["env"].get("render_mode", "rgb_array"),
+        max_episode_steps=config["train"].get("max_episode_steps", 2000),
+        walls=config["env"].get("walls", []),
+        goal_size=config["env"].get("goal_size", 1.0),
+        agent_location_range=config["env"].get(
+            "agent_location_range", [[0.0, 10.0], [0.0, 10.0]]
+        ),
+        goal_location_range=config["env"].get(
+            "goal_location_range", [[0.0, 10.0], [0.0, 10.0]]
+        ),
+        frame_stack_size=config["env"].get("frame_stack_size", 1),
     )
     # initialize the environment for evaluation callback
     env_eval = init_gym(
         gym_name="EvaluationGym",
         logs_path=logs_path,
         video_path=None,
-        render_mode=config["env"]["render_mode"],
-        max_episode_steps=config["train"]["max_episode_steps"],
-        walls=config["env"]["walls"],
-        goal_size=config["env"]["goal_size"],
-        agent_location_range=config["env"]["agent_location_range"],
-        goal_location_range=config["env"]["goal_location_range"],
+        render_mode=config["env"].get("render_mode", "rgb_array"),
+        max_episode_steps=config["train"].get("max_episode_steps", 2000),
+        walls=config["env"].get("walls", []),
+        goal_size=config["env"].get("goal_size", 1.0),
+        agent_location_range=config["env"].get(
+            "agent_location_range", [[0.0, 10.0], [0.0, 10.0]]
+        ),
+        goal_location_range=config["env"].get(
+            "goal_location_range", [[0.0, 10.0], [0.0, 10.0]]
+        ),
+        frame_stack_size=config["env"].get("frame_stack_size", 1),
     )
 
     # Set up logging for training progress
@@ -101,8 +111,8 @@ def custom_training(config):
         env_eval,
         logs_path,
         output_path,
-        max_no_improvement_evals=config["train"]["max_no_improvement_evals"],
-        eval_freq=config["train"]["eval_freq"],
+        max_no_improvement_evals=config["train"].get("max_no_improvement_evals", 1000),
+        eval_freq=config["train"].get("eval_freq", 1000),
     )
 
     if config["setup"]["continue_training"] and os.path.exists(input_path):

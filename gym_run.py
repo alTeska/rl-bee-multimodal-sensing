@@ -15,6 +15,9 @@ env = init_gym(
     goal_size=0.5,
     agent_location_range=[[0.0, 2.0], [0.0, 10.0]],
     goal_location_range=[[5.0, 10.0], [0.0, 10.0]],
+    frame_stack_size=5,
+    noise_vision=True,
+    noise_smell=True,
 )
 
 
@@ -30,5 +33,6 @@ obs = vec_env.reset()
 while True:
     action, _states = model.predict(obs)
     obs, rewards, dones, info = vec_env.step(action)
+    print(obs.shape)
 
 env.close()

@@ -3,7 +3,7 @@ setup:
   alias: round4
 
   continue_training: True
-  old_alias: round3
+  old_alias: round4
 env:
   algorithm: TD3
   gym_name: BeeWorld
@@ -16,12 +16,14 @@ env:
   agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
   goal_location_range: [[8.0, 10.0], [0.0, 10.0]]
   frame_stack_size: 5
+  noise_vision: True
+  noise_smell: True
 
 train: 
   timesteps: 500_000
   max_episode_steps: 5000
   policy_kwargs: { net_arch: [300, 200], activation_fn: ReLU }
-  learning_rate: 0.001
+  learning_rate: 0.0001
   max_no_improvement_evals: 200
   eval_freq: 1000
 
