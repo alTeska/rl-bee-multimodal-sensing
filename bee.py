@@ -177,7 +177,7 @@ class BeeWorld(gym.Env):
         ):
             return 0 + noise
 
-        return 1
+        return 1 - noise
 
     def _get_smell(self) -> np.ndarray:
         """
