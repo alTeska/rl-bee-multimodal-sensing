@@ -31,6 +31,7 @@ env = init_gym(
     frame_stack_size=config["env"]["frame_stack_size"],
     noise_smell=config["env"]["noise_smell"],
     noise_vision=config["env"]["noise_vision"],
+    max_episode_steps=config["test"]["max_episode_steps"],
 )
 
 model = load_model(env, output_path, replay_buffer=None, logger=None)
