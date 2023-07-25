@@ -6,6 +6,8 @@ from tqdm.notebook import trange
 from stable_baselines3 import TD3
 from model import init_gym, load_model
 from render_model import render_prediction
+from stable_baselines3.common.evaluation import evaluate_policy
+import numpy as np
 
 config_path = "configs/test-config.yaml"
 
@@ -18,8 +20,8 @@ output_path = os.path.join(config["setup"]["path"], config["setup"]["alias"])
 env = init_gym(
     gym_name=config["env"]["gym_name"],
     render_mode=config["env"]["render_mode"],
-    video_path=os.path.join(output_path, "video"),
-    logs_path=None,
+    video_path=None,
+    logs_path=os.path.join(output_path, "test_logs"),
     walls=config["env"]["walls"],
     goal_size=config["env"]["goal_size"],
     agent_location_range=config["env"]["agent_location_range"],
@@ -30,4 +32,14 @@ env = init_gym(
 )
 
 model = load_model(env, output_path, replay_buffer=None, logger=None)
-frames = render_prediction(model, config["test"]["prediction_steps"])
+# frames = render_prediction(model, config["test"]["prediction_steps"])
+res = evaluate_policy(
+    model,
+    model.get_env(),
+    n_eval_episodes=25,
+    deterministic=True,
+    render=False,
+    return_episode_rewards=True,
+)
+
+np.savetxt("log.txt", np.array(res))
