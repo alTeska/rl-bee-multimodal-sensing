@@ -16,6 +16,8 @@ env = init_gym(
     agent_location_range=[[0.0, 2.0], [0.0, 10.0]],
     goal_location_range=[[5.0, 10.0], [0.0, 10.0]],
     frame_stack_size=5,
+    noise_vision=True,
+    noise_smell=True,
 )
 
 
