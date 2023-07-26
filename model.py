@@ -70,7 +70,7 @@ def init_gym(
         env = FrameStack(env, num_stack=frame_stack_size)
 
     if video_path:
-        env = RecordVideo(env, video_path, lambda x: x % 50 == 0)
+        env = RecordVideo(env, video_path, lambda x: x % 10 == 0)
 
     if logs_path:
         env = Monitor(env, logs_path, allow_early_resets=True)
