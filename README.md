@@ -4,6 +4,7 @@ Reinforcement Learning Model Training and Prediction for Neuromatch group projec
 This repository contains Python scripts and utilities for training a custom Reinforcement Learning (RL) model using the Twin Delayed Deep Deterministic Policy Gradient (TD3) algorithm. The trained model can be used for predicting actions in a custom Gym environment.
 
 
+[![Bee Demo](https://raw.githubusercontent.com/alTeska/rl-bee-multimodal-sensing/analysis/complex.mp4)]
 
 ## Files
 
