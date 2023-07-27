@@ -6,6 +6,13 @@ This repository contains Python scripts and utilities for training a custom Rein
 
 [![Bee Demo](https://raw.githubusercontent.com/alTeska/rl-bee-multimodal-sensing/analysis/complex.mp4)]
 
+
+https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/c404de51-9ece-4c3b-beaa-3ce0a81f8b44
+
+
+https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/112bc8db-5a83-428c-991e-8e12203f3bde
+
+
 ## Files
 
 The repository contains the following files:
