@@ -37,14 +37,20 @@ def init_gym(
 ):
     """
     Initialize the Gym environment with the given setup.
-    For new walls: [(pAx, pAy),(pBx,pBy), (pAx, pAy),(pBx,pBy)]
 
     Parameters:
         gym_name (str): The name of the custom Gym environment to initialize. Defaults to "BeeWorld".
         render_mode (str): The rendering mode for the environment. Defaults to "rgb_array".
+        frame_stack_size (int or None): The number of frames to stack as input. If None, no frame stacking is performed. Defaults to None.
         max_episode_steps (int): The maximum number of steps per episode. Defaults to 1000.
         logs_path (str or None): The directory path to store logs. If None, no logging is performed. Defaults to None.
         video_path (str or None): The directory path to save video recordings. If None, no videos are recorded. Defaults to None.
+        walls (list): A list of walls represented as pairs of points in 2D space. Defaults to a single wall at [(5.0, 0.0), (5.0, 5.0)].
+        goal_size (float): The size of the goal in the environment. Defaults to 2.0.
+        agent_location_range (list): The range of possible starting locations for the agent in the environment, represented as pairs of x and y coordinate ranges. Defaults to [(0.0, 2.0), (0.0, 10.0)].
+        goal_location_range (list): The range of possible goal locations in the environment, represented as pairs of x and y coordinate ranges. Defaults to [(5.0, 10.0), (0.0, 10.0)].
+        noise_smell (bool): Whether to add noise to the agent's smell perception. Defaults to False.
+        noise_vision (bool): Whether to add noise to the agent's vision perception. Defaults to False.
 
     Returns:
         gym.Env: The initialized Gym environment.
@@ -135,6 +141,7 @@ def load_model(
         path (str): The path to the directory containing the saved model.
         replay_buffer (stable_baselines3.common.buffers.ReplayBuffer or None): The replay buffer to load into the model. Defaults to None.
         logger (stable_baselines3.common.logger.Logger or None): The logger to be used for logging training progress. Defaults to None.
+        learning_rate (float): The learning rate to be used while loading the model. Defaults to 0.001.
 
     Returns:
         stable_baselines3.TD3: The loaded TD3 model.
