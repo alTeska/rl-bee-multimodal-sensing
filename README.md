@@ -1,26 +1,46 @@
 # Relevance of sensory modalities for spatial navigation [rl-bee-multimodal-sensing]
 Reinforcement Learning Model Training and Prediction for Neuromatch group project  This repository contains Python scripts and utilities for training a custom Reinforcement Learning (RL) model using the Twin Delayed Deep Deterministic Policy Gradient (TD3) algorithm. The trained model can be used for predicting actions in a custom Gym environment.
 
+The problem is goal-oriented spatial navigation with multi-modal sensory inputs. Two sensory inputs, that can be knocked-out (added noise) in order to investigate the importance of the senses: How do different modalities contribute to 
+goal-oriented spatial navigation?
+
+
 Agent in complex environment:
 
 https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/c404de51-9ece-4c3b-beaa-3ce0a81f8b44
 
 
 ## Model specifics:
-1. logging, early stopping, model managment
-2. model re-training
-3. walls/obstacles
-1. Testing different architectures
-2. Make goal smaller
-3. Reward testing 
-   1. Adding senses
-   2. Time passed punishment
-   3. wall hitting punishment
-4. Increasing/gradually shrinking the goal size whilst training
-5. multiple goals
+
+Environment Design:
+- 2D env (Gymnasium) with continuous action space
+- action space: 
+  - acceleration 
+  - angular acceleration 
+- rewards: 
+  - 1000 points for finding the goal
+  - negative reward for energy expenditure
+  - negative reward for distance from the goal
+
+
+Observation space (6 inputs): 
+- sensory inputs:
+  - vision  - one hot encoding (0/1) modeled with limited angle cone, (wall vision included - based on ray casting)
+  - smell - modeled as euclidean distance from the goal
+- time elapsed 
+- velocity, angular velocity  
+- at each time step agent receives `(5, 6)` matrix containing  a current time frame and a memory of previous 4 frames
+
+
+Training specific:
+1. multiple-round training integration with model management and custom logging
+2. early stopping if no training progress
+3. goal size can be changed, custom walls/obstacles
+
+For our sample training we gradually decreased the size of the goal and added the walls.
+
 
 Training example: 
-
 
 
 https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/df3a1da3-7378-475b-8ffa-c9957835bb79
