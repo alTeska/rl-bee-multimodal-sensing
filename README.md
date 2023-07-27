@@ -53,7 +53,10 @@ The repository contains the following files:
 4. Increasing/gradually shrinking the goal size whilst training
 5. multiple goals
 
-https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/112bc8db-5a83-428c-991e-8e12203f3bde
+
+https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/df3a1da3-7378-475b-8ffa-c9957835bb79
+
+
 
 ## References
 
