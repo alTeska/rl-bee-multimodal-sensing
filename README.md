@@ -1,13 +1,8 @@
-# rl-bee-multimodal-sensing 
-Reinforcement Learning Model Training and Prediction for Neuromatch group project: Relevance of sensory modalities for spatial navigation in foraging behaviours of the bee
+# rl-bee-multimodal-sensing - Relevance of sensory modalities for spatial navigation
+Reinforcement Learning Model Training and Prediction for Neuromatch group project  This repository contains Python scripts and utilities for training a custom Reinforcement Learning (RL) model using the Twin Delayed Deep Deterministic Policy Gradient (TD3) algorithm. The trained model can be used for predicting actions in a custom Gym environment.
 
-This repository contains Python scripts and utilities for training a custom Reinforcement Learning (RL) model using the Twin Delayed Deep Deterministic Policy Gradient (TD3) algorithm. The trained model can be used for predicting actions in a custom Gym environment.
-
-
-
+Agent in complex environment:
 https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/c404de51-9ece-4c3b-beaa-3ce0a81f8b44
-
-
 
 
 ## Files
@@ -30,17 +25,21 @@ The repository contains the following files:
 
 ```python train_model.py --config_path config.yaml```
 
+You can have a set of consecutive training rounds, make sure to specify each in a separate config.yaml and set proper alias setting. This is demonstrated in:
 
-3. After training, you can generate a video of the model's predictions using the `render_model.py` script:
+```bash run-multiround-training.sh```
 
-```python render_model.py --config_path config.yaml```
+3. After training, you can generate a video of the model's predictions using the `render_model.py` script or evaluate the model and save the episodes into a test log:
+
+```python render_model.py --config_path configs/config.yaml```
+```python render_model.py --config_path configs/test-config.yaml```
 
 
-4. You can also use the convinience jupyter-notebooks, useful for working in google colab.
+4. You can also use the convenience jupyter-notebooks, useful for working in google colab.
 
 
 
-### Model training specifics:
+## Model specifics:
 1. logging, early stopping, model managment
 2. model re-training
 3. walls/obstacles
@@ -53,7 +52,7 @@ The repository contains the following files:
 4. Increasing/gradually shrinking the goal size whilst training
 5. multiple goals
 
-
+Training example: 
 https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/df3a1da3-7378-475b-8ffa-c9957835bb79
 
 
