@@ -36,6 +36,7 @@ env = init_gym(
 
 model = load_model(env, output_path, replay_buffer=None, logger=None)
 # frames = render_prediction(model, config["test"]["prediction_steps"])
+
 res = evaluate_policy(
     model,
     model.get_env(),
