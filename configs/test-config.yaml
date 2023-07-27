@@ -1,22 +1,23 @@
 setup:
   path: models/bee-world-500k_v3/
   alias: round5
-
   continue_training: True
   old_alias: round5
+
 env:
   algorithm: TD3
   gym_name: BeeWorld
   render_mode: rgb_array
   walls: [
-        [[5.0, 0.0], [5.0, 5.0]],
+        [[5.0, 0.0], [5.0, 4.0]],
+        [[7.5, 10.0], [7.5, 6.0]],
     ]
   goal_size: 0.5
   video: True
   agent_location_range: [[0.0, 2.0], [0.0, 10.0]]
   goal_location_range: [[8.0, 10.0], [0.0, 10.0]]
   frame_stack_size: 5
-  noise_vision: False
+  noise_vision: True
   noise_smell: True
 
 train: 
@@ -30,6 +31,7 @@ train:
 
 test:
   prediction_steps: 1000
+
+  log_name: "both-sennses-noisy"
   eval_episodes: 1000
-  log_name: "long_good"
   max_episode_steps: 5000

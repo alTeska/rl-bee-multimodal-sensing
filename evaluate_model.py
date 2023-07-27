@@ -9,16 +9,19 @@ from render_model import render_prediction
 from stable_baselines3.common.evaluation import evaluate_policy
 import numpy as np
 
+# Path to the configuration file
 config_path = "configs/test-config.yaml"
 
+# Load configuration parameters from the YAML file
 with open(config_path, "r") as file:
     config = yaml.safe_load(file)
 
+# Set the output path for test results and logs
 output_path = os.path.join(config["setup"]["path"], config["setup"]["alias"])
 log_path = os.path.join(output_path, "test_logs")
 os.makedirs(log_path, exist_ok=True)
 
-# Load the model and generate prediction frames
+# Initialize the Gym environment for testing the model's predictions
 env = init_gym(
     gym_name=config["env"]["gym_name"],
     render_mode=config["env"]["render_mode"],
@@ -34,8 +37,10 @@ env = init_gym(
     max_episode_steps=config["test"]["max_episode_steps"],
 )
 
+# Load the pre-trained model for evaluation
 model = load_model(env, output_path, replay_buffer=None, logger=None)
-# frames = render_prediction(model, config["test"]["prediction_steps"])
+
+# Evaluate the model's performance
 res = evaluate_policy(
     model,
     model.get_env(),
@@ -45,5 +50,6 @@ res = evaluate_policy(
     return_episode_rewards=True,
 )
 
+# Save the evaluation results to a log file
 log = os.path.join(log_path, f"{config['test']['log_name']}.txt")
 np.savetxt(log, np.array(res))

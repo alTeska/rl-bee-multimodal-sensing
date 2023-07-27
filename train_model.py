@@ -33,7 +33,14 @@ def custom_training(config):
             },
             "env": {
                 "gym_name": str,
-                "render_mode": str
+                "render_mode": str,
+                "video": bool,
+                "max_episode_steps": int,
+                "walls": list,
+                "goal_size": float,
+                "agent_location_range": list,
+                "goal_location_range": list,
+                "frame_stack_size": int
             }
         }
 
