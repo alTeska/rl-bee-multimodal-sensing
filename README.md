@@ -4,13 +4,10 @@ Reinforcement Learning Model Training and Prediction for Neuromatch group projec
 This repository contains Python scripts and utilities for training a custom Reinforcement Learning (RL) model using the Twin Delayed Deep Deterministic Policy Gradient (TD3) algorithm. The trained model can be used for predicting actions in a custom Gym environment.
 
 
-[![Bee Demo](https://raw.githubusercontent.com/alTeska/rl-bee-multimodal-sensing/analysis/complex.mp4)]
-
 
 https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/c404de51-9ece-4c3b-beaa-3ce0a81f8b44
 
 
-https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/112bc8db-5a83-428c-991e-8e12203f3bde
 
 
 ## Files
@@ -42,13 +39,11 @@ The repository contains the following files:
 4. You can also use the convinience jupyter-notebooks, useful for working in google colab.
 
 
-## WIP:
-Implemented features: 
+
+### Model training specifics:
 1. logging, early stopping, model managment
 2. model re-training
 3. walls/obstacles
-
-### TODO model wise:
 1. Testing different architectures
 2. Make goal smaller
 3. Reward testing 
@@ -58,6 +53,7 @@ Implemented features:
 4. Increasing/gradually shrinking the goal size whilst training
 5. multiple goals
 
+https://github.com/alTeska/rl-bee-multimodal-sensing/assets/17547288/112bc8db-5a83-428c-991e-8e12203f3bde
 
 ## References
 
